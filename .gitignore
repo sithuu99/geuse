@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.pkl
+*.log
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# OS / Editor
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Data (DO NOT COMMIT)
+datasets/
+
+# Model artifacts (optional: keep local)
+*.pt
+*.npz
+
+# Build outputs
+dist/
+build/
+*.spec
