@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install:*)",
+      "Bash(cd:*)",
+      "Bash(mv build_dataset.py train_multiclass_nn.py train_multitask.py realtime_multitask_demo.py ml/scripts/)",
+      "Bash(mv fist_model.pt geuse_multiclass.pt geuse_multitask.pt ml/models/)",
+      "Bash(mv hand_dataset.npz ml/data/)",
+      "Bash(mv datasets/* ml/data/datasets/)",
+      "Bash(rmdir datasets:*)"
+    ]
+  }
+}

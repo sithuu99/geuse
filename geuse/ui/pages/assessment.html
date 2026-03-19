@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Assessment</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .camera-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #111;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .camera-placeholder { color: var(--text-muted); font-size: .9rem; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .3rem .8rem;
+      border-radius: 20px;
+      font-size: .82rem;
+      font-weight: 600;
+    }
+    .status-badge.idle    { background: var(--surface-2); color: var(--text-muted); }
+    .status-badge.running { background: var(--accent-dim); color: var(--accent); }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: currentColor;
+    }
+    .running .dot { animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav">
+      <span>Geuse</span><span class="sep">›</span>
+      <a href="#" onclick="api.navigate('self_report')">Check-In</a>
+      <span class="sep">›</span><span class="active">Assessment</span>
+    </nav>
+
+    <div class="flex items-center justify-between">
+      <h1>Range-of-Motion Assessment</h1>
+      <span class="status-badge idle" id="badge">
+        <span class="dot"></span> Idle
+      </span>
+    </div>
+    <p class="muted mt-1">
+      Position your hand in front of the camera and follow the on-screen prompts.
+      We will measure your current range of motion.
+    </p>
+
+    <div class="camera-box mt-3">
+      <p class="camera-placeholder" id="camMsg">Camera feed will appear here once started.</p>
+    </div>
+
+    <div class="flex gap-2 mt-3">
+      <button class="btn btn-primary" id="btnStart">Start Camera</button>
+      <button class="btn btn-ghost"   id="btnStop" disabled>Stop & Analyse</button>
+      <button class="btn btn-ghost"   onclick="api.navigate('self_report')">Back</button>
+    </div>
+  </div>
+
+  <script src="../js/bridge.js"></script>
+  <script>
+    const btnStart = document.getElementById("btnStart");
+    const btnStop  = document.getElementById("btnStop");
+    const badge    = document.getElementById("badge");
+    const camMsg   = document.getElementById("camMsg");
+
+    btnStart.addEventListener("click", async () => {
+      btnStart.disabled = true;
+      await api.startAssessment();
+      badge.className    = "status-badge running";
+      badge.innerHTML    = '<span class="dot"></span> Recording…';
+      camMsg.textContent = "Camera active — move your hand through its full range.";
+      btnStop.disabled   = false;
+    });
+
+    btnStop.addEventListener("click", async () => {
+      btnStop.disabled = true;
+      await api.stopAssessment();
+      badge.className    = "status-badge idle";
+      badge.innerHTML    = '<span class="dot"></span> Done';
+      camMsg.textContent = "Assessment complete. Generating your plan…";
+      setTimeout(() => api.navigate("plan"), 1200);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Your Plan</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .exercise-list { display: flex; flex-direction: column; gap: .8rem; margin-top: 1rem; }
+    .exercise-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .9rem 1.2rem;
+    }
+    .ex-name  { font-weight: 600; }
+    .ex-meta  { font-size: .82rem; color: var(--text-muted); margin-top: .15rem; }
+    .ex-badge {
+      font-size: .78rem; font-weight: 700;
+      background: var(--accent-dim);
+      color: var(--accent);
+      padding: .25rem .6rem;
+      border-radius: 20px;
+    }
+    .plan-meta {
+      display: flex; gap: 1.5rem; margin-top: 1rem;
+      font-size: .9rem; color: var(--text-muted);
+    }
+    .plan-meta strong { color: var(--text); }
+    .note-box {
+      margin-top: 1.2rem;
+      padding: .8rem 1rem;
+      background: var(--surface-2);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      font-size: .9rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav">
+      <span>Geuse</span><span class="sep">›</span><span class="active">Your Plan</span>
+    </nav>
+
+    <h1>Your Rehabilitation Plan</h1>
+    <p class="muted mt-1">Generated based on your profile and today's check-in.</p>
+
+    <div id="planContainer" class="mt-3">
+      <p class="muted">Loading plan…</p>
+    </div>
+
+    <div class="flex gap-2 mt-4">
+      <button class="btn btn-primary" id="btnSession">Start Today's Session</button>
+      <button class="btn btn-ghost"   onclick="api.navigate('self_report')">Back</button>
+    </div>
+  </div>
+
+  <script src="../js/bridge.js"></script>
+  <script>
+    (async () => {
+      const plan = await api.getPlan();
+      const container = document.getElementById("planContainer");
+
+      if (!plan || !plan.exercises || plan.exercises.length === 0) {
+        container.innerHTML = "<p class='muted'>No plan available yet. Complete the assessment first.</p>";
+        return;
+      }
+
+      const items = plan.exercises.map((ex) => `
+        <div class="exercise-item">
+          <div>
+            <div class="ex-name">${ex.name}</div>
+            <div class="ex-meta">${ex.sets} sets × ${ex.reps} reps · ${ex.rest_s}s rest</div>
+          </div>
+          <span class="ex-badge">${ex.sets * ex.reps} total</span>
+        </div>
+      `).join("");
+
+      container.innerHTML = `
+        <div class="plan-meta">
+          <div><strong>${plan.sessions_per_week}</strong> sessions / week</div>
+        </div>
+        ${plan.notes ? `<div class="note-box">${plan.notes}</div>` : ""}
+        <div class="exercise-list">${items}</div>
+      `;
+
+      // Save the displayed plan
+      await api.savePlan(plan);
+    })();
+
+    document.getElementById("btnSession").addEventListener("click", () => {
+      api.navigate("session");
+    });
+  </script>
+</body>
+</html>

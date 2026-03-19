@@ -1,0 +1,712 @@
+/* ================================================================
+   Geuse Design System
+   ================================================================
+   Token layers:
+     1. Primitive palette  — raw color values, never used directly
+     2. Semantic tokens    — role-based aliases (--bg, --accent, …)
+     3. Component tokens   — per-component overrides via CSS vars
+   ================================================================ */
+
+/* ----------------------------------------------------------------
+   0. Google Fonts import
+   ---------------------------------------------------------------- */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+/* ----------------------------------------------------------------
+   1. Primitive palette
+   ---------------------------------------------------------------- */
+:root {
+  /* Grays */
+  --gray-950: #080808;
+  --gray-900: #0d0d0d;
+  --gray-850: #141414;
+  --gray-800: #1a1a1a;
+  --gray-750: #1f1f1f;
+  --gray-700: #252525;
+  --gray-600: #2e2e2e;
+  --gray-500: #3d3d3d;
+  --gray-400: #555;
+  --gray-300: #888;
+  --gray-200: #aaa;
+  --gray-100: #ccc;
+  --gray-50:  #e8e8e8;
+
+  /* Green accent (Tailwind green-400) */
+  --green-900: #052e16;
+  --green-800: #14532d;
+  --green-700: #166534;
+  --green-600: #16a34a;
+  --green-400: #4ade80;
+  --green-300: #86efac;
+  --green-200: #bbf7d0;
+
+  /* Status colors */
+  --amber-400: #fbbf24;
+  --amber-800: #451a03;
+  --red-400:   #f87171;
+  --red-800:   #450a0a;
+}
+
+/* ----------------------------------------------------------------
+   2. Semantic tokens
+   ---------------------------------------------------------------- */
+:root {
+  /* Surfaces */
+  --bg:         var(--gray-900);
+  --bg-raised:  var(--gray-850);
+  --surface:    var(--gray-800);
+  --surface-2:  var(--gray-700);
+  --surface-3:  var(--gray-750);
+
+  /* Borders */
+  --border:     var(--gray-600);
+  --border-subtle: var(--gray-700);
+
+  /* Text */
+  --text:       var(--gray-50);
+  --text-muted: var(--gray-300);
+  --text-faint: var(--gray-400);
+
+  /* Accent */
+  --accent:         var(--green-400);
+  --accent-dim:     var(--green-700);
+  --accent-dimmer:  var(--green-800);
+  --accent-glow:    rgba(74, 222, 128, 0.15);
+  --accent-text:    var(--gray-900);   /* text ON accent bg */
+
+  /* Status */
+  --status-waiting-color: var(--amber-400);
+  --status-waiting-bg:    var(--amber-800);
+  --status-ok-color:      var(--green-400);
+  --status-ok-bg:         var(--green-800);
+  --status-error-color:   var(--red-400);
+  --status-error-bg:      var(--red-800);
+
+  /* Shape */
+  --radius-sm:  6px;
+  --radius:     10px;
+  --radius-lg:  16px;
+  --radius-xl:  24px;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm:  0 1px 3px rgba(0,0,0,.4);
+  --shadow:     0 4px 16px rgba(0,0,0,.5);
+  --shadow-lg:  0 8px 32px rgba(0,0,0,.6);
+  --shadow-accent: 0 0 20px rgba(74,222,128,.25);
+
+  /* Motion */
+  --ease:       cubic-bezier(.4,0,.2,1);
+  --dur-fast:   120ms;
+  --dur:        200ms;
+  --dur-slow:   350ms;
+
+  /* Typography */
+  --font:       "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono:  "JetBrains Mono", "Cascadia Code", "Consolas", monospace;
+}
+
+/* ----------------------------------------------------------------
+   3. Reset
+   ---------------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ----------------------------------------------------------------
+   4. Base
+   ---------------------------------------------------------------- */
+html {
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.6;
+  overflow: hidden; /* PyWebView app — no page scroll */
+}
+
+/* Scrollable containers opt-in */
+.scroll { overflow-y: auto; overflow-x: hidden; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-500); }
+
+/* Text selection */
+::selection { background: var(--accent-dim); color: var(--text); }
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease);
+}
+a:hover { color: var(--green-300); }
+
+/* ----------------------------------------------------------------
+   5. Typography
+   ---------------------------------------------------------------- */
+h1 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+h2 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+h4 {
+  font-size: .9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--text-muted);
+}
+
+p { max-width: 60ch; }
+
+.text-muted   { color: var(--text-muted); }
+.text-faint   { color: var(--text-faint); }
+.text-accent  { color: var(--accent); }
+.text-sm      { font-size: .875rem; }
+.text-xs      { font-size: .78rem; }
+.text-lg      { font-size: 1.1rem; }
+.font-mono    { font-family: var(--font-mono); }
+.font-medium  { font-weight: 500; }
+.font-semibold{ font-weight: 600; }
+.font-bold    { font-weight: 700; }
+
+/* ----------------------------------------------------------------
+   6. Layout primitives
+   ---------------------------------------------------------------- */
+
+/* Full-viewport page shell */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 2rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Two-column split (welcome, assessment, session) */
+.split-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.split-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 2.5rem 2rem;
+  overflow-y: auto;
+  gap: 1.5rem;
+}
+
+.split-main {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-raised);
+}
+
+/* ----------------------------------------------------------------
+   7. Card
+   ---------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+}
+
+.card-sm {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: .75rem 1rem;
+}
+
+.card-accent {
+  background: var(--accent-dimmer);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+}
+
+/* ----------------------------------------------------------------
+   8. Buttons
+   ---------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45rem;
+  padding: .6rem 1.4rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-family: var(--font);
+  font-size: .9rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease),
+    box-shadow var(--dur-fast) var(--ease),
+    transform var(--dur-fast) var(--ease),
+    opacity var(--dur-fast) var(--ease);
+  outline: none;
+}
+
+.btn:focus-visible {
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(.97);
+}
+
+/* Primary */
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--green-300);
+  border-color: var(--green-300);
+  box-shadow: var(--shadow-accent);
+}
+
+/* Ghost */
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--gray-500);
+  color: var(--text);
+}
+
+/* Danger */
+.btn-danger {
+  background: var(--red-400);
+  border-color: var(--red-400);
+  color: var(--gray-900);
+}
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+/* Sizes */
+.btn-sm {
+  padding: .4rem .9rem;
+  font-size: .82rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-lg {
+  padding: .8rem 2rem;
+  font-size: 1rem;
+  border-radius: var(--radius);
+}
+
+/* Disabled */
+.btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ----------------------------------------------------------------
+   9. Badge
+   ---------------------------------------------------------------- */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .65rem;
+  border-radius: var(--radius-full);
+  font-size: .75rem;
+  font-weight: 600;
+  line-height: 1;
+  border: 1px solid transparent;
+}
+
+.badge-neutral {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.badge-accent {
+  background: var(--accent-dimmer);
+  color: var(--accent);
+  border-color: var(--accent-dim);
+}
+
+.badge-warning {
+  background: var(--amber-800);
+  color: var(--amber-400);
+}
+
+.badge-danger {
+  background: var(--red-800);
+  color: var(--red-400);
+}
+
+/* ----------------------------------------------------------------
+   10. Status indicator
+   ---------------------------------------------------------------- */
+
+/* Container row */
+.status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: .55rem;
+  font-size: .85rem;
+  font-weight: 500;
+}
+
+/* The dot */
+.status-dot {
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--gray-500);
+}
+
+/* States */
+.status-dot--idle     { background: var(--gray-500); }
+
+.status-dot--waiting  {
+  background: var(--status-waiting-color);
+  animation: pulse-amber 1.4s ease-in-out infinite;
+}
+
+.status-dot--detected {
+  background: var(--status-ok-color);
+  animation: pulse-green 1.2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--status-ok-color);
+}
+
+.status-dot--error    { background: var(--status-error-color); }
+
+/* ----------------------------------------------------------------
+   11. Camera feed
+   ---------------------------------------------------------------- */
+.cam-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--gray-950);
+}
+
+.cam-feed {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Shown when no frame yet */
+.cam-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .75rem;
+  color: var(--text-faint);
+  font-size: .875rem;
+  pointer-events: none;
+}
+
+.cam-placeholder svg {
+  width: 40px;
+  height: 40px;
+  opacity: .3;
+}
+
+/* Bottom overlay bar */
+.cam-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: .75rem 1rem;
+  background: linear-gradient(transparent, rgba(0,0,0,.75));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  pointer-events: none;
+}
+
+.cam-gesture-label {
+  font-size: .82rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Closure bar */
+.closure-track {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .75rem;
+  color: var(--text-faint);
+}
+.closure-bar {
+  width: 80px;
+  height: 4px;
+  background: var(--gray-700);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.closure-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  transition: width .1s linear;
+}
+
+/* ----------------------------------------------------------------
+   12. Form elements
+   ---------------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: .35rem; }
+
+.field-label {
+  font-size: .8rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: .02em;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: .9rem;
+  padding: .55rem .8rem;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+}
+
+input::placeholder,
+textarea::placeholder { color: var(--text-faint); }
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+textarea { resize: vertical; min-height: 80px; }
+
+select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right .75rem center;
+  padding-right: 2.2rem;
+}
+
+/* Range slider */
+input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(74,222,128,.4);
+}
+
+/* Chip group (goal selector etc.) */
+.chip-group { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+  padding: .35rem .85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: .82rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease);
+}
+
+.chip input[type="checkbox"] { display: none; }
+
+.chip:hover { background: var(--surface-2); border-color: var(--gray-500); }
+
+.chip.selected {
+  background: var(--accent-dimmer);
+  border-color: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* ----------------------------------------------------------------
+   13. Nav breadcrumb
+   ---------------------------------------------------------------- */
+.nav {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  font-size: .8rem;
+  color: var(--text-faint);
+  margin-bottom: 2rem;
+  flex-shrink: 0;
+}
+.nav-sep   { color: var(--gray-600); }
+.nav-link  { color: var(--text-muted); transition: color var(--dur-fast); cursor: pointer; }
+.nav-link:hover { color: var(--text); }
+.nav-active{ color: var(--text); font-weight: 600; }
+
+/* ----------------------------------------------------------------
+   14. Divider
+   ---------------------------------------------------------------- */
+.divider {
+  width: 100%;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ----------------------------------------------------------------
+   15. Animations
+   ---------------------------------------------------------------- */
+@keyframes pulse-green {
+  0%, 100% { opacity: 1;  box-shadow: 0 0 0   0   rgba(74,222,128,.6); }
+  50%       { opacity: .7; box-shadow: 0 0 0  6px  rgba(74,222,128,0);  }
+}
+
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: .45; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.animate-fade-in  { animation: fade-in .3s var(--ease) both; }
+.animate-spin     { animation: spin .8s linear infinite; }
+
+/* Stagger helpers for lists */
+.animate-fade-in:nth-child(1) { animation-delay:  0ms; }
+.animate-fade-in:nth-child(2) { animation-delay: 60ms; }
+.animate-fade-in:nth-child(3) { animation-delay:120ms; }
+.animate-fade-in:nth-child(4) { animation-delay:180ms; }
+.animate-fade-in:nth-child(5) { animation-delay:240ms; }
+
+/* ----------------------------------------------------------------
+   16. Utilities
+   ---------------------------------------------------------------- */
+.flex          { display: flex; }
+.flex-col      { display: flex; flex-direction: column; }
+.flex-1        { flex: 1; }
+.items-center  { align-items: center; }
+.items-start   { align-items: flex-start; }
+.items-end     { align-items: flex-end; }
+.justify-center  { justify-content: center; }
+.justify-between { justify-content: space-between; }
+.justify-end     { justify-content: flex-end; }
+.gap-1   { gap: .4rem; }
+.gap-2   { gap: .75rem; }
+.gap-3   { gap: 1.25rem; }
+.gap-4   { gap: 2rem; }
+.wrap    { flex-wrap: wrap; }
+
+.mt-1 { margin-top: .4rem; }
+.mt-2 { margin-top: .75rem; }
+.mt-3 { margin-top: 1.25rem; }
+.mt-4 { margin-top: 2rem; }
+.mt-auto { margin-top: auto; }
+.mb-1 { margin-bottom: .4rem; }
+.mb-2 { margin-bottom: .75rem; }
+.mb-3 { margin-bottom: 1.25rem; }
+
+.w-full  { width: 100%; }
+.h-full  { height: 100%; }
+.min-w-0 { min-width: 0; }
+
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+.pointer { cursor: pointer; }
+.no-select { user-select: none; }

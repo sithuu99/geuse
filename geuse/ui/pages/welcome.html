@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    /* ── Welcome-specific layout ─────────────────────────────── */
+
+    body { overflow: hidden; }
+
+    /* Left panel */
+    .panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 3rem 2.5rem;
+      background: var(--bg);
+      border-right: 1px solid var(--border-subtle);
+      gap: 0; /* children manage their own spacing */
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Wordmark */
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-bottom: 2.75rem;
+    }
+
+    .logo-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: var(--accent);
+      color: var(--accent-text);
+      font-size: 1.3rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 1px rgba(74,222,128,.3), var(--shadow-accent);
+      letter-spacing: -.02em;
+    }
+
+    .logo-name {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -.03em;
+      color: var(--text);
+    }
+
+    /* Copy block */
+    .copy { margin-bottom: 2.5rem; }
+
+    .copy h1 {
+      font-size: 1.9rem;
+      margin-bottom: .6rem;
+      color: var(--text);
+    }
+
+    .copy p {
+      font-size: .9rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      max-width: 28ch;
+    }
+
+    /* Status section */
+    .status-section {
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+      margin-bottom: 2rem;
+    }
+
+    .status-label {
+      font-size: .75rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+
+    #statusRow {
+      gap: .55rem;
+      font-size: .88rem;
+      color: var(--text-muted);
+    }
+
+    /* Closure indicator */
+    .closure-section {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      font-size: .78rem;
+      color: var(--text-faint);
+      min-height: 1.2rem; /* prevent layout shift when hidden */
+    }
+
+    .closure-track {
+      flex: 1;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .closure-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+      transition: width .1s linear;
+    }
+
+    .closure-value {
+      font-variant-numeric: tabular-nums;
+      min-width: 2.6rem;
+      text-align: right;
+    }
+
+    /* Continue button */
+    #btnContinue {
+      width: 100%;
+      padding: .75rem;
+      font-size: .95rem;
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Shimmer on the button once unlocked */
+    #btnContinue.unlocked::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,.15) 50%, transparent 100%);
+      animation: shimmer 1.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shimmer {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(200%); }
+    }
+
+    /* Footer */
+    .panel-footer {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 2.5rem;
+      right: 2.5rem;
+      font-size: .75rem;
+      color: var(--text-faint);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* ── Right side: camera pane ─────────────────────────────── */
+
+    .camera-pane {
+      position: relative;
+      background: var(--gray-950);
+      overflow: hidden;
+    }
+
+    #camFeed {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0;
+      transition: opacity .4s var(--ease);
+    }
+
+    #camFeed.visible { opacity: 1; }
+
+    /* Placeholder shown before first frame */
+    .cam-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      pointer-events: none;
+      transition: opacity .3s var(--ease);
+    }
+
+    .cam-placeholder.hidden { opacity: 0; }
+
+    .cam-placeholder-icon {
+      width: 56px;
+      height: 56px;
+      opacity: .15;
+    }
+
+    .cam-placeholder p {
+      font-size: .85rem;
+      color: var(--text-faint);
+      text-align: center;
+      max-width: 20ch;
+    }
+
+    /* Spinner ring (shown while camera initialises) */
+    .spinner-ring {
+      width: 32px;
+      height: 32px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+
+    /* Overlay bar at the bottom of the camera */
+    .cam-overlay {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 1.25rem .9rem;
+      background: linear-gradient(transparent, rgba(0,0,0,.82));
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity .3s var(--ease);
+      pointer-events: none;
+    }
+
+    .cam-overlay.visible { opacity: 1; }
+
+    .overlay-gesture {
+      font-size: .8rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .overlay-sub {
+      font-size: .72rem;
+      color: var(--text-faint);
+      margin-top: .25rem;
+    }
+
+    .overlay-right {
+      text-align: right;
+    }
+
+    .overlay-closure {
+      font-size: .72rem;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-faint);
+    }
+
+    /* Hand-detected glow on the camera border */
+    .camera-pane::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid transparent;
+      border-radius: 0;
+      transition: border-color .3s var(--ease), box-shadow .3s var(--ease);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    .camera-pane.hand-detected::before {
+      border-color: rgba(74, 222, 128, .25);
+      box-shadow: inset 0 0 40px rgba(74, 222, 128, .06);
+    }
+
+    /* Corner accents on the camera feed */
+    .cam-corner {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: var(--border);
+      border-style: solid;
+      opacity: .4;
+      transition: border-color .3s, opacity .3s;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .cam-corner-tl { top: 12px; left: 12px;  border-width: 2px 0 0 2px; }
+    .cam-corner-tr { top: 12px; right: 12px;  border-width: 2px 2px 0 0; }
+    .cam-corner-bl { bottom: 12px; left: 12px;  border-width: 0 0 2px 2px; }
+    .cam-corner-br { bottom: 12px; right: 12px;  border-width: 0 2px 2px 0; }
+
+    .camera-pane.hand-detected .cam-corner {
+      border-color: var(--accent);
+      opacity: .7;
+    }
+  </style>
+</head>
+<body>
+
+<div class="split-layout">
+
+  <!-- ── Left panel: branding + controls ────────────────────── -->
+  <aside class="panel animate-fade-in">
+
+    <!-- Wordmark -->
+    <div class="logo">
+      <div class="logo-mark">G</div>
+      <span class="logo-name">Geuse</span>
+    </div>
+
+    <!-- Copy -->
+    <div class="copy">
+      <h1>Hand<br>Rehabilitation</h1>
+      <p class="mt-2">
+        Position your hand in front of the camera to begin.
+        We'll track your range of motion and build your programme.
+      </p>
+    </div>
+
+    <!-- Status -->
+    <div class="status-section">
+      <span class="status-label">Detection</span>
+
+      <div class="status-row flex items-center" id="statusRow">
+        <div class="status-dot status-dot--idle" id="statusDot"></div>
+        <span id="statusText">Initialising camera…</span>
+      </div>
+
+      <!-- Closure / openness bar -->
+      <div class="closure-section" id="closureSection" style="visibility:hidden">
+        <span style="font-size:.72rem; white-space:nowrap">Closure</span>
+        <div class="closure-track">
+          <div class="closure-fill" id="closureFill"></div>
+        </div>
+        <span class="closure-value" id="closureValue">0%</span>
+      </div>
+    </div>
+
+    <!-- Continue button -->
+    <button class="btn btn-primary" id="btnContinue" disabled>
+      Continue
+    </button>
+
+    <!-- Footer -->
+    <div class="panel-footer">
+      <span>Geuse v0.1</span>
+    </div>
+
+  </aside>
+
+  <!-- ── Right pane: camera feed ──────────────────────────── -->
+  <main class="camera-pane" id="cameraPaneEl">
+
+    <!-- Corner decoration -->
+    <div class="cam-corner cam-corner-tl"></div>
+    <div class="cam-corner cam-corner-tr"></div>
+    <div class="cam-corner cam-corner-bl"></div>
+    <div class="cam-corner cam-corner-br"></div>
+
+    <!-- Placeholder / spinner -->
+    <div class="cam-placeholder" id="camPlaceholder">
+      <div class="spinner-ring" id="spinnerRing"></div>
+      <p id="placeholderText">Starting camera…</p>
+    </div>
+
+    <!-- The actual feed — set as img src from base64 frames -->
+    <img id="camFeed" alt="Camera feed" />
+
+    <!-- Bottom overlay: gesture label + closure values -->
+    <div class="cam-overlay" id="camOverlay">
+      <div>
+        <div class="overlay-gesture" id="overlayGesture">—</div>
+        <div class="overlay-sub" id="overlaySub"></div>
+      </div>
+      <div class="overlay-right">
+        <div class="overlay-closure" id="overlayClosure"></div>
+      </div>
+    </div>
+
+  </main>
+
+</div><!-- /.split-layout -->
+
+
+<script src="../js/bridge.js"></script>
+<script>
+  /* ── DOM refs ─────────────────────────────────────────── */
+  const statusDot       = document.getElementById("statusDot");
+  const statusText      = document.getElementById("statusText");
+  const closureSection  = document.getElementById("closureSection");
+  const closureFill     = document.getElementById("closureFill");
+  const closureValue    = document.getElementById("closureValue");
+  const btnContinue     = document.getElementById("btnContinue");
+  const camFeed         = document.getElementById("camFeed");
+  const camPlaceholder  = document.getElementById("camPlaceholder");
+  const placeholderText = document.getElementById("placeholderText");
+  const spinnerRing     = document.getElementById("spinnerRing");
+  const camOverlay      = document.getElementById("camOverlay");
+  const cameraPaneEl    = document.getElementById("cameraPaneEl");
+  const overlayGesture  = document.getElementById("overlayGesture");
+  const overlaySub      = document.getElementById("overlaySub");
+  const overlayClosure  = document.getElementById("overlayClosure");
+
+  /* ── State ────────────────────────────────────────────── */
+  let handDetectedCount = 0;   // consecutive frames with a hand
+  const UNLOCK_THRESHOLD = 8;  // frames before button unlocks
+  let cameraStarted = false;
+  let polling = false;
+
+  /* ── Status helpers ───────────────────────────────────── */
+  function setStatus(state, text) {
+    // state: "idle" | "waiting" | "detected" | "error"
+    statusDot.className = `status-dot status-dot--${state}`;
+    statusText.textContent = text;
+  }
+
+  /* ── Camera init ──────────────────────────────────────── */
+  async function initCamera() {
+    setStatus("idle", "Initialising camera…");
+
+    try {
+      await api.startCamera();
+    } catch (e) {
+      setStatus("error", "Camera unavailable");
+      placeholderText.textContent = "Camera not found.";
+      spinnerRing.style.display = "none";
+      return;
+    }
+
+    cameraStarted = true;
+    setStatus("waiting", "Show your hand to the camera");
+    placeholderText.textContent = "Waiting for hand…";
+    startPolling();
+  }
+
+  /* ── Frame polling ────────────────────────────────────── */
+  function startPolling() {
+    if (polling) return;
+    polling = true;
+    schedulePoll();
+  }
+
+  function schedulePoll() {
+    // Recursive setTimeout avoids queuing if inference > 33 ms
+    window.pywebview.api.get_frame()
+      .then(handleFrame)
+      .catch(() => {})
+      .finally(() => {
+        if (polling) setTimeout(schedulePoll, 33);
+      });
+  }
+
+  function handleFrame(data) {
+    if (!data.ok) return;
+
+    /* ── Render frame ───────────────────────────────── */
+    if (data.jpeg_b64) {
+      camFeed.src = "data:image/jpeg;base64," + data.jpeg_b64;
+
+      if (!camFeed.classList.contains("visible")) {
+        camFeed.classList.add("visible");
+        camPlaceholder.classList.add("hidden");
+        camOverlay.classList.add("visible");
+      }
+    }
+
+    /* ── Hand detection ─────────────────────────────── */
+    if (data.hand_detected) {
+      handDetectedCount = Math.min(handDetectedCount + 1, UNLOCK_THRESHOLD + 5);
+
+      // Update status on first detection
+      if (handDetectedCount === 1) {
+        setStatus("detected", "Hand detected");
+      }
+
+      // Show closure bar
+      closureSection.style.visibility = "visible";
+      const pct = Math.round(data.raw_closure * 100);
+      closureFill.style.width = pct + "%";
+      closureValue.textContent = pct + "%";
+
+      // Overlay
+      overlayGesture.textContent = data.label || "—";
+      overlaySub.textContent = "";
+      overlayClosure.textContent =
+        `learned ${(data.learned_closure * 100).toFixed(0)}%  ·  raw ${pct}%`;
+
+      cameraPaneEl.classList.add("hand-detected");
+
+      // Unlock button after sustained detection
+      if (handDetectedCount >= UNLOCK_THRESHOLD && btnContinue.disabled) {
+        unlockContinue();
+      }
+
+    } else {
+      // Hand lost
+      handDetectedCount = Math.max(0, handDetectedCount - 1);
+
+      if (handDetectedCount === 0) {
+        setStatus("waiting", "Show your hand to the camera");
+        closureSection.style.visibility = "hidden";
+        overlayGesture.textContent = "—";
+        overlaySub.textContent = "";
+        overlayClosure.textContent = "";
+        cameraPaneEl.classList.remove("hand-detected");
+      }
+    }
+  }
+
+  /* ── Unlock the Continue button ──────────────────────── */
+  function unlockContinue() {
+    btnContinue.disabled = false;
+    btnContinue.classList.add("unlocked");
+    setStatus("detected", "Hand detected — ready to continue");
+  }
+
+  /* ── Continue click ───────────────────────────────────── */
+  btnContinue.addEventListener("click", async () => {
+    polling = false;              // stop polling
+    await api.stopCamera();       // release webcam
+    api.navigate("profile");
+  });
+
+  /* ── Boot ─────────────────────────────────────────────── */
+  // Wait for pywebview to be ready before doing anything
+  (function boot() {
+    if (window.pywebview?.api) {
+      initCamera();
+      return;
+    }
+    window.addEventListener("pywebviewready", initCamera, { once: true });
+  })();
+</script>
+</body>
+</html>

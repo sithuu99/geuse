@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Daily Check-In</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .pain-scale {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-top: .6rem;
+    }
+    .pain-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 2.5rem;
+      text-align: center;
+    }
+    .field { margin-bottom: 1.4rem; }
+    textarea { resize: vertical; min-height: 80px; }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav">
+      <span>Geuse</span><span class="sep">›</span><span class="active">Daily Check-In</span>
+    </nav>
+
+    <h1>How are you today?</h1>
+    <p class="muted mt-1">A quick check-in before your session helps us adapt the programme.</p>
+
+    <form id="reportForm" class="mt-4">
+      <div class="card">
+        <div class="field">
+          <label>Pain Level (0 = none, 10 = severe)</label>
+          <div class="pain-scale">
+            <input type="range" id="pain" min="0" max="10" value="0" />
+            <span class="pain-value" id="painDisplay">0</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Stiffness</label>
+          <div class="pain-scale">
+            <input type="range" id="stiffness" min="0" max="10" value="0" />
+            <span class="pain-value" id="stiffnessDisplay">0</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Overall Energy</label>
+          <div class="pain-scale">
+            <input type="range" id="energy" min="0" max="10" value="5" />
+            <span class="pain-value" id="energyDisplay">5</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="notes">Any notes for your therapist? (optional)</label>
+          <textarea id="notes" placeholder="E.g. woke up with swelling, tried gripping a cup this morning…"></textarea>
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Continue to Assessment</button>
+        <button type="button" class="btn btn-ghost" onclick="api.navigate('profile')">Back</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="../js/bridge.js"></script>
+  <script>
+    function linkSlider(id, displayId) {
+      const slider  = document.getElementById(id);
+      const display = document.getElementById(displayId);
+      slider.addEventListener("input", () => { display.textContent = slider.value; });
+    }
+
+    linkSlider("pain",      "painDisplay");
+    linkSlider("stiffness", "stiffnessDisplay");
+    linkSlider("energy",    "energyDisplay");
+
+    document.getElementById("reportForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await api.saveSelfReport({
+        pain_level: parseInt(document.getElementById("pain").value),
+        stiffness:  parseInt(document.getElementById("stiffness").value),
+        energy:     parseInt(document.getElementById("energy").value),
+        notes:      document.getElementById("notes").value.trim(),
+        date:       new Date().toISOString(),
+      });
+      api.navigate("assessment");
+    });
+  </script>
+</body>
+</html>

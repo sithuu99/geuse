@@ -72,7 +72,7 @@ def main():
     )
     draw = mp.solutions.drawing_utils
 
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         raise RuntimeError("Webcam not available")
 

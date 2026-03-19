@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Profile</title>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .field { margin-bottom: 1.2rem; }
+    .checkbox-group { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .4rem; }
+    .chip {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .35rem .8rem;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: .85rem;
+      user-select: none;
+      transition: background .12s, border-color .12s;
+    }
+    .chip input { display: none; }
+    .chip.selected { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav">
+      <span>Geuse</span><span class="sep">›</span><span class="active">Profile</span>
+    </nav>
+
+    <h1>Your Profile</h1>
+    <p class="muted mt-1">Tell us a little about yourself so we can tailor your programme.</p>
+
+    <form id="profileForm" class="mt-4">
+      <div class="card">
+        <div class="field">
+          <label for="name">Full Name</label>
+          <input type="text" id="name" placeholder="e.g. Alex Johnson" required />
+        </div>
+
+        <div class="field">
+          <label for="age">Age</label>
+          <input type="number" id="age" min="5" max="120" placeholder="e.g. 42" required />
+        </div>
+
+        <div class="field">
+          <label for="affected_hand">Affected Hand</label>
+          <select id="affected_hand">
+            <option value="right">Right</option>
+            <option value="left">Left</option>
+            <option value="both">Both</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Rehabilitation Goals</label>
+          <div class="checkbox-group" id="goals">
+            <label class="chip" data-value="grip_strength">
+              <input type="checkbox" value="grip_strength" /> Grip Strength
+            </label>
+            <label class="chip" data-value="rom">
+              <input type="checkbox" value="rom" /> Range of Motion
+            </label>
+            <label class="chip" data-value="dexterity">
+              <input type="checkbox" value="dexterity" /> Dexterity
+            </label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="condition">Condition / Injury (optional)</label>
+          <input type="text" id="condition" placeholder="e.g. post-surgery, arthritis, fracture…" />
+        </div>
+      </div>
+
+      <div class="flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Save & Continue</button>
+        <button type="button" class="btn btn-ghost" onclick="api.navigate('welcome')">Back</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="../js/bridge.js"></script>
+  <script>
+    // Chip toggle
+    document.querySelectorAll(".chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        chip.classList.toggle("selected");
+        chip.querySelector("input").checked = chip.classList.contains("selected");
+      });
+    });
+
+    // Pre-fill if profile exists
+    (async () => {
+      const p = await api.getProfile();
+      if (!p) return;
+      if (p.name)          document.getElementById("name").value = p.name;
+      if (p.age)           document.getElementById("age").value  = p.age;
+      if (p.affected_hand) document.getElementById("affected_hand").value = p.affected_hand;
+      if (p.condition)     document.getElementById("condition").value = p.condition;
+      (p.goals || []).forEach((g) => {
+        const chip = document.querySelector(`.chip[data-value="${g}"]`);
+        if (chip) { chip.classList.add("selected"); chip.querySelector("input").checked = true; }
+      });
+    })();
+
+    document.getElementById("profileForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const goals = [...document.querySelectorAll("#goals input:checked")].map((i) => i.value);
+      await api.saveProfile({
+        name:          document.getElementById("name").value.trim(),
+        age:           parseInt(document.getElementById("age").value),
+        affected_hand: document.getElementById("affected_hand").value,
+        goals,
+        condition:     document.getElementById("condition").value.trim(),
+      });
+      api.navigate("self_report");
+    });
+  </script>
+</body>
+</html>
