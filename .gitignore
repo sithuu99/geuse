@@ -6,6 +6,10 @@ __pycache__/
 *.pkl
 *.log
 
+assets/geuse.db
+
+.claude/
+
 # Virtual environments
 .venv/
 venv/
