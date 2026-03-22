@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+
+    body { overflow: hidden; }
+
+    /* ── Dashboard grid ───────────────────────────────────────── */
+    .dash-grid {
+      display: grid;
+      grid-template-columns: 1fr 0.52fr;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* ── Main column ──────────────────────────────────────────── */
+    .main-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+      padding: 2rem 2.5rem;
+      overflow-y: auto;
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+    }
+
+    /* ── Greeting ─────────────────────────────────────────────── */
+    .greeting-eyebrow {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-bottom: .35rem;
+    }
+
+    .greeting-heading {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.5vw, 2rem);
+      font-weight: 700;
+      line-height: 1.18;
+      letter-spacing: -0.025em;
+      color: var(--text);
+    }
+
+    /* ── Start session card ───────────────────────────────────── */
+    .start-card {
+      background: var(--accent);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition:
+        filter 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.12s var(--ease);
+    }
+
+    .start-card:hover {
+      filter: brightness(1.06);
+      box-shadow: var(--shadow-accent);
+    }
+
+    .start-card:active { transform: scale(0.99); }
+
+    /* Subtle grain texture overlay */
+    .start-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .start-card-eyebrow {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--bg);
+      opacity: 0.75;
+    }
+
+    .start-card-title {
+      font-family: var(--font-serif);
+      font-size: 1.55rem;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: var(--bg);
+    }
+
+    .start-card-meta {
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+
+    .start-card-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      padding: .25rem .75rem;
+      border-radius: var(--radius-full);
+      background: rgba(255,255,255,0.18);
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--bg);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+
+    .start-card-btn {
+      margin-top: .25rem;
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .55rem 1.4rem;
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--accent);
+      font-size: .9rem;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      transition: box-shadow 0.15s ease, transform 0.1s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .start-card-btn:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .start-card-btn:active { transform: scale(0.97); }
+
+    /* ── Section heading ──────────────────────────────────────── */
+    .section-heading {
+      font-size: .7rem;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-bottom: .6rem;
+    }
+
+    /* ── Plan exercise list ───────────────────────────────────── */
+    .plan-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .plan-ex-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: .75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .75rem 1rem;
+    }
+
+    .plan-ex-name {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: .15rem;
+    }
+
+    .plan-ex-detail {
+      font-size: .78rem;
+      color: var(--text-hint);
+    }
+
+    .plan-ex-badges {
+      display: flex;
+      gap: .35rem;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    .sidebar-col {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.75rem 1.75rem;
+      background: var(--surface);
+      overflow-y: auto;
+    }
+
+    /* ── Sidebar widget ───────────────────────────────────────── */
+    .widget {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .widget-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+    }
+
+    /* ── Streak ───────────────────────────────────────────────── */
+    .streak-row {
+      display: flex;
+      align-items: baseline;
+      gap: .5rem;
+    }
+
+    .streak-num {
+      font-family: var(--font-serif);
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .streak-unit {
+      font-size: .85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .streak-sub {
+      font-size: .78rem;
+      color: var(--text-hint);
+    }
+
+    /* ── Last session ─────────────────────────────────────────── */
+    .last-session-date {
+      font-size: .82rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .last-session-meta {
+      font-size: .78rem;
+      color: var(--text-hint);
+      line-height: 1.55;
+    }
+
+    /* ── Sparkline ────────────────────────────────────────────── */
+    .sparkline-wrap {
+      display: flex;
+      align-items: flex-end;
+      gap: 5px;
+      height: 40px;
+      margin-top: .25rem;
+    }
+
+    .spark-bar {
+      flex: 1;
+      border-radius: 3px 3px 0 0;
+      min-height: 3px;
+      transition: background-color 0.3s ease;
+    }
+
+    .spark-bar.low  { background: var(--green); }
+    .spark-bar.mid  { background: var(--warning); }
+    .spark-bar.high { background: var(--danger); }
+
+    .sparkline-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: .25rem;
+      font-size: .65rem;
+      color: var(--text-hint);
+    }
+
+    /* ── Quick stats ──────────────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+    }
+
+    .stat-cell {
+      display: flex;
+      flex-direction: column;
+      gap: .15rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .65rem .85rem;
+    }
+
+    .stat-val {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: .68rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+    }
+
+    /* ── Loading ──────────────────────────────────────────────── */
+    #loadingView {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: .75rem;
+      color: var(--text-muted);
+      font-size: .9rem;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-md);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      transition: none;
+    }
+
+    /* ── No-plan placeholder ──────────────────────────────────── */
+    .empty-plan {
+      padding: 1.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: .88rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
+    </div>
+    <div></div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" onclick="api.navigate('profile')">Profile</button>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div id="loadingView">
+    <div class="spinner"></div>
+    Loading…
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashView" class="dash-grid" style="display:none;">
+
+    <!-- ── Left: main content ──────────────────────────────── -->
+    <div class="main-col">
+
+      <!-- Greeting -->
+      <div>
+        <p class="greeting-eyebrow" id="greetingEyebrow">Good morning</p>
+        <h1 class="greeting-heading" id="greetingHeading">Ready to train?</h1>
+      </div>
+
+      <!-- Start session card -->
+      <div class="start-card" id="startCard">
+        <div class="start-card-eyebrow">Today's session</div>
+        <div class="start-card-title" id="startCardTitle">Loading plan…</div>
+        <div class="start-card-meta" id="startCardMeta"></div>
+        <button class="start-card-btn" id="btnStartSession">
+          Start session
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Your plan -->
+      <div>
+        <p class="section-heading">Your Plan</p>
+        <div class="plan-list" id="planList">
+          <div class="empty-plan">No plan generated yet — complete the assessment first.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Right: sidebar ──────────────────────────────────── -->
+    <div class="sidebar-col">
+
+      <!-- Streak -->
+      <div class="widget">
+        <div class="widget-label">Streak</div>
+        <div class="streak-row">
+          <span class="streak-num" id="streakNum">—</span>
+          <span class="streak-unit">days</span>
+        </div>
+        <div class="streak-sub" id="streakSub">Complete a session to start your streak</div>
+      </div>
+
+      <!-- Last session -->
+      <div class="widget" id="lastSessionWidget">
+        <div class="widget-label">Last session</div>
+        <div class="last-session-date" id="lastSessionDate">No sessions yet</div>
+        <div class="last-session-meta" id="lastSessionMeta"></div>
+      </div>
+
+      <!-- Pain trend -->
+      <div class="widget" id="painTrendWidget">
+        <div class="widget-label">Pain trend</div>
+        <div class="sparkline-wrap" id="sparkline">
+          <div style="font-size:.78rem;color:var(--text-hint);align-self:center;">
+            No check-in data yet
+          </div>
+        </div>
+        <div class="sparkline-labels" id="sparklineLabels" style="display:none;">
+          <span>5 ago</span>
+          <span>Now</span>
+        </div>
+      </div>
+
+      <!-- Quick stats -->
+      <div class="widget">
+        <div class="widget-label">All time</div>
+        <div class="stats-row">
+          <div class="stat-cell">
+            <span class="stat-val" id="totalSessions">—</span>
+            <span class="stat-label">Sessions</span>
+          </div>
+          <div class="stat-cell">
+            <span class="stat-val" id="totalExercises">—</span>
+            <span class="stat-label">Exercises</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /.app-shell -->
+
+
+<script>
+  /* ── Theme toggle ─────────────────────────────────────────────── */
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    html.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+    const isDark = theme === "dark";
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+<script src="../js/bridge.js"></script>
+<script>
+/* ── Greeting ─────────────────────────────────────────────────── */
+function timeGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+/* ── Duration estimate ────────────────────────────────────────── */
+function estimateDurationMin(exercises) {
+  let totalSec = 0;
+  for (const ex of exercises) {
+    const perRep = ex.tracking_type === "hold" ? (ex.hold_s || 5) + 2 : 3;
+    totalSec += ex.sets * (ex.reps * perRep) + Math.max(0, ex.sets - 1) * (ex.rest_s || 20);
+  }
+  return Math.max(1, Math.round(totalSec / 60));
+}
+
+/* ── Date formatting ─────────────────────────────────────────── */
+function formatDate(isoStr) {
+  if (!isoStr) return "—";
+  try {
+    const d = new Date(isoStr.replace(" ", "T"));
+    const today    = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const sameDay = (a, b) =>
+      a.getDate() === b.getDate() &&
+      a.getMonth() === b.getMonth() &&
+      a.getFullYear() === b.getFullYear();
+
+    if (sameDay(d, today))     return "Today";
+    if (sameDay(d, yesterday)) return "Yesterday";
+
+    return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+  } catch (_) {
+    return isoStr.slice(0, 10);
+  }
+}
+
+function fmtDuration(seconds) {
+  if (!seconds) return "—";
+  const m = Math.round(seconds / 60);
+  return m < 1 ? `${seconds}s` : `${m} min`;
+}
+
+/* ── Sparkline ────────────────────────────────────────────────── */
+function renderSparkline(painHistory) {
+  const sparkEl  = document.getElementById("sparkline");
+  const labelsEl = document.getElementById("sparklineLabels");
+
+  if (!painHistory || painHistory.length === 0) return;
+
+  const bars = painHistory.map(v => {
+    const h   = Math.max(8, Math.round((v / 10) * 100));
+    const cls = v <= 3 ? "low" : v <= 6 ? "mid" : "high";
+    return `<div class="spark-bar ${cls}" style="height:${h}%;" title="Pain: ${v}/10"></div>`;
+  }).join("");
+
+  sparkEl.innerHTML  = bars;
+  labelsEl.style.display = "flex";
+}
+
+/* ── Plan card list ───────────────────────────────────────────── */
+function renderPlanList(exercises) {
+  const list = document.getElementById("planList");
+
+  if (!exercises || exercises.length === 0) {
+    list.innerHTML = `<div class="empty-plan">
+      No plan found. <span class="text-accent pointer" onclick="api.navigate('plan')">Generate one first.</span>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = exercises.map(ex => {
+    const isHold  = ex.tracking_type === "hold";
+    const details = isHold
+      ? `${ex.sets} sets · ${ex.reps} holds · ${ex.hold_s}s each · ${ex.rest_s}s rest`
+      : `${ex.sets} sets · ${ex.reps} reps · ${ex.rest_s}s rest`;
+
+    const typeBadge = isHold
+      ? `<span class="badge badge-accent">Hold</span>`
+      : `<span class="badge badge-neutral">Reps</span>`;
+
+    return `
+      <div class="plan-ex-row">
+        <div>
+          <div class="plan-ex-name">${ex.name}</div>
+          <div class="plan-ex-detail">${details}</div>
+        </div>
+        <div class="plan-ex-badges">${typeBadge}</div>
+      </div>`;
+  }).join("");
+}
+
+/* ── Start card ───────────────────────────────────────────────── */
+function renderStartCard(exercises) {
+  const title  = document.getElementById("startCardTitle");
+  const meta   = document.getElementById("startCardMeta");
+  const btn    = document.getElementById("btnStartSession");
+
+  if (!exercises || exercises.length === 0) {
+    title.textContent = "No plan yet";
+    meta.innerHTML = `<span class="start-card-pill">Complete assessment to generate</span>`;
+    btn.textContent = "Go to plan";
+    btn.onclick = () => api.navigate("plan");
+    return;
+  }
+
+  const durationMin = estimateDurationMin(exercises);
+  const exCount     = exercises.length;
+
+  title.textContent = `${exCount} exercise${exCount !== 1 ? "s" : ""} · ~${durationMin} min`;
+
+  const names = exercises.slice(0, 2).map(e => e.name).join(", ");
+  const more  = exercises.length > 2 ? ` +${exercises.length - 2} more` : "";
+  meta.innerHTML = `
+    <span class="start-card-pill">${names}${more}</span>
+  `;
+
+  btn.onclick = () => api.navigate("session");
+}
+
+/* ── Streak widget ────────────────────────────────────────────── */
+function renderStreak(streak) {
+  document.getElementById("streakNum").textContent = streak;
+  const sub = document.getElementById("streakSub");
+  if (streak === 0) {
+    sub.textContent = "Complete a session to start your streak";
+  } else if (streak === 1) {
+    sub.textContent = "Good start — keep it up!";
+  } else if (streak < 7) {
+    sub.textContent = `${streak} days running. Don't break it!`;
+  } else {
+    sub.textContent = `${streak} days — outstanding consistency.`;
+  }
+}
+
+/* ── Last session widget ─────────────────────────────────────── */
+function renderLastSession(sessions) {
+  const dateEl = document.getElementById("lastSessionDate");
+  const metaEl = document.getElementById("lastSessionMeta");
+
+  if (!sessions || sessions.length === 0) {
+    dateEl.textContent = "No sessions yet";
+    metaEl.textContent = "";
+    return;
+  }
+
+  const s       = sessions[0];
+  const exDone  = s.exercises?.length || 0;
+  const dur     = fmtDuration(s.duration_s);
+
+  dateEl.textContent = formatDate(s.completed_at);
+  metaEl.innerHTML =
+    `${exDone} exercise${exDone !== 1 ? "s" : ""}` +
+    (s.duration_s ? ` · ${dur}` : "") +
+    (s.pain_after != null ? ` · Pain after: ${s.pain_after}/10` : "");
+}
+
+/* ── Boot ─────────────────────────────────────────────────────── */
+async function boot() {
+  try {
+    const [profileRes, planRes, historyRes] = await Promise.all([
+      api.getProfile(),
+      api.getPlan(),
+      api.getSessionHistory(),
+    ]);
+
+    // Greeting
+    const name = profileRes.profile?.name;
+    document.getElementById("greetingEyebrow").textContent = timeGreeting();
+    document.getElementById("greetingHeading").textContent = name
+      ? name
+      : "Ready to train?";
+
+    // Plan
+    const exercises = planRes.plan?.exercises || [];
+    renderStartCard(exercises);
+    renderPlanList(exercises);
+
+    // History
+    if (historyRes.ok) {
+      renderStreak(historyRes.streak || 0);
+      renderLastSession(historyRes.sessions || []);
+      renderSparkline(historyRes.pain_history || []);
+      document.getElementById("totalSessions").textContent  = historyRes.total_sessions ?? "—";
+      document.getElementById("totalExercises").textContent = historyRes.total_exercises ?? "—";
+    }
+
+    document.getElementById("loadingView").style.display = "none";
+    document.getElementById("dashView").style.display    = "grid";
+  } catch (err) {
+    document.getElementById("loadingView").innerHTML =
+      `<p class="text-muted text-sm">Failed to load dashboard.</p>`;
+  }
+}
+
+if (window.pywebview?.api) {
+  boot();
+} else {
+  window.addEventListener("pywebviewready", boot, { once: true });
+}
+</script>
+</body>
+</html>

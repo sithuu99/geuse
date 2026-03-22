@@ -1,99 +1,341 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Geuse — Daily Check-In</title>
+  <title>Geuse — How Are You Feeling?</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
   <style>
-    .pain-scale {
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+    .page { height: 100%; overflow-y: auto; }
+
+    /* ── Section spacing ──────────────────────────────────────── */
+    .section { margin-top: 1.4rem; }
+
+    /* ── Pain display ─────────────────────────────────────────── */
+    .pain-display {
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 1rem;
-      margin-top: .6rem;
+      gap: .25rem;
+      margin-bottom: 1.25rem;
     }
-    .pain-value {
-      font-size: 1.8rem;
+
+    .pain-number {
+      font-family: var(--font-serif);
+      font-size: 4rem;
       font-weight: 700;
+      line-height: 1;
+      /* override global * transition for color so it snaps immediately */
+      transition: color 0.15s ease;
+    }
+
+    .pain-number.level-low    { color: var(--green);   }
+    .pain-number.level-mid    { color: var(--warning);  }
+    .pain-number.level-high   { color: var(--danger);   }
+
+    .pain-descriptor {
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--text-hint);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      min-height: 1.2em;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: .78rem;
+      color: var(--text-hint);
+      font-weight: 500;
+    }
+
+    /* ── Goal chips ───────────────────────────────────────────── */
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-top: .75rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      padding: .45rem 1rem;
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-full);
+      font-size: .85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--surface);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .chip:hover { background: var(--surface-muted); color: var(--text); }
+
+    .chip.selected {
+      background: var(--accent-subtle);
+      border-color: var(--accent);
       color: var(--accent);
-      min-width: 2.5rem;
+    }
+
+    /* ── Section label ────────────────────────────────────────── */
+    .section-label {
+      font-size: .78rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-bottom: .6rem;
+    }
+
+    /* ── Footer CTA ───────────────────────────────────────────── */
+    .page-footer {
+      padding: 2rem 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+
+    .footer-hint {
+      font-size: .78rem;
+      color: var(--text-hint);
       text-align: center;
     }
-    .field { margin-bottom: 1.4rem; }
-    textarea { resize: vertical; min-height: 80px; }
   </style>
 </head>
 <body>
+<div class="app-shell">
+
+  <!-- ── Topbar ─────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
+    </div>
+    <div class="step-dots" aria-label="Step 3 of 5">
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+    </div>
+    <div class="topbar-right">
+      <span class="step-label">Step 3 of 5</span>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
+    </div>
+  </header>
+
+  <!-- ── Page content ───────────────────────────────────────────── -->
   <div class="page">
+
     <nav class="nav">
-      <span>Geuse</span><span class="sep">›</span><span class="active">Daily Check-In</span>
+      <span>Geuse</span>
+      <span class="nav-sep">›</span>
+      <span class="nav-link" onclick="api.navigate('profile')">Profile</span>
+      <span class="nav-sep">›</span>
+      <span class="nav-active">Daily Check-In</span>
     </nav>
 
-    <h1>How are you today?</h1>
-    <p class="muted mt-1">A quick check-in before your session helps us adapt the programme.</p>
+    <h1>How is your hand feeling?</h1>
+    <p class="text-muted mt-2" style="max-width: 46ch;">
+      Your answers help us calibrate the right starting intensity so your first session
+      feels challenging but safe.
+    </p>
 
-    <form id="reportForm" class="mt-4">
+    <!-- ── Pain level ──────────────────────────────────────────── -->
+    <div class="section">
       <div class="card">
-        <div class="field">
-          <label>Pain Level (0 = none, 10 = severe)</label>
-          <div class="pain-scale">
-            <input type="range" id="pain" min="0" max="10" value="0" />
-            <span class="pain-value" id="painDisplay">0</span>
-          </div>
+        <p class="section-label">Pain level right now</p>
+
+        <div class="pain-display">
+          <span class="pain-number level-low" id="painNumber">0</span>
+          <span class="pain-descriptor" id="painDescriptor">No pain</span>
         </div>
 
-        <div class="field">
-          <label>Stiffness</label>
-          <div class="pain-scale">
-            <input type="range" id="stiffness" min="0" max="10" value="0" />
-            <span class="pain-value" id="stiffnessDisplay">0</span>
+        <div class="slider-row">
+          <input
+            type="range"
+            id="painSlider"
+            min="0"
+            max="10"
+            value="0"
+            step="1"
+            aria-label="Pain level 0 to 10"
+          />
+          <div class="slider-labels">
+            <span>No pain</span>
+            <span>Severe</span>
           </div>
-        </div>
-
-        <div class="field">
-          <label>Overall Energy</label>
-          <div class="pain-scale">
-            <input type="range" id="energy" min="0" max="10" value="5" />
-            <span class="pain-value" id="energyDisplay">5</span>
-          </div>
-        </div>
-
-        <div class="field">
-          <label for="notes">Any notes for your therapist? (optional)</label>
-          <textarea id="notes" placeholder="E.g. woke up with swelling, tried gripping a cup this morning…"></textarea>
         </div>
       </div>
+    </div>
 
-      <div class="flex gap-2 mt-3">
-        <button type="submit" class="btn btn-primary">Continue to Assessment</button>
-        <button type="button" class="btn btn-ghost" onclick="api.navigate('profile')">Back</button>
+    <!-- ── Known limitations ──────────────────────────────────── -->
+    <div class="section">
+      <div class="card">
+        <p class="section-label">Known limitations</p>
+        <p class="text-muted text-sm mb-2" style="margin-bottom: .75rem;">
+          Any movements you know you cannot do or should avoid right now?
+        </p>
+        <textarea
+          id="limitations"
+          rows="3"
+          placeholder="e.g. Can't fully extend fingers, avoid gripping tightly, wrist rotation is painful…"
+          style="resize: vertical;"
+        ></textarea>
       </div>
-    </form>
-  </div>
+    </div>
 
-  <script src="../js/bridge.js"></script>
-  <script>
-    function linkSlider(id, displayId) {
-      const slider  = document.getElementById(id);
-      const display = document.getElementById(displayId);
-      slider.addEventListener("input", () => { display.textContent = slider.value; });
-    }
+    <!-- ── Main goal ───────────────────────────────────────────── -->
+    <div class="section">
+      <div class="card">
+        <p class="section-label">What's your main goal?</p>
+        <p class="text-muted text-sm" style="margin-bottom: 0;">
+          Choose one — this shapes which exercises we prioritise.
+        </p>
+        <div class="chip-group" id="goalChips">
+          <button class="chip" data-value="regain_strength">Regain strength</button>
+          <button class="chip" data-value="improve_flexibility">Improve flexibility</button>
+          <button class="chip" data-value="reduce_stiffness">Reduce stiffness</button>
+          <button class="chip" data-value="recover_surgery">Recover from surgery</button>
+          <button class="chip" data-value="general_maintenance">General maintenance</button>
+        </div>
+      </div>
+    </div>
 
-    linkSlider("pain",      "painDisplay");
-    linkSlider("stiffness", "stiffnessDisplay");
-    linkSlider("energy",    "energyDisplay");
+    <!-- ── Footer ─────────────────────────────────────────────── -->
+    <div class="page-footer">
+      <button class="btn btn-primary btn-full btn-lg" id="btnNext">
+        Continue to Assessment
+      </button>
+      <p class="footer-hint">You can update this before every session</p>
+    </div>
 
-    document.getElementById("reportForm").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await api.saveSelfReport({
-        pain_level: parseInt(document.getElementById("pain").value),
-        stiffness:  parseInt(document.getElementById("stiffness").value),
-        energy:     parseInt(document.getElementById("energy").value),
-        notes:      document.getElementById("notes").value.trim(),
-        date:       new Date().toISOString(),
-      });
-      api.navigate("assessment");
+  </div><!-- /.page -->
+</div><!-- /.app-shell -->
+
+
+<script>
+  /* ── Theme toggle ─────────────────────────────────────────────── */
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    html.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+    syncToggleIcon();
+  }
+
+  function syncToggleIcon() {
+    const isDark = html.getAttribute("data-theme") === "dark";
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+<script src="../js/bridge.js"></script>
+<script>
+  /* ── Pain slider ──────────────────────────────────────────────── */
+  const slider      = document.getElementById("painSlider");
+  const painNumber  = document.getElementById("painNumber");
+  const painDescriptor = document.getElementById("painDescriptor");
+
+  const DESCRIPTORS = [
+    "No pain",       // 0
+    "Very mild",     // 1
+    "Mild",          // 2
+    "Noticeable",    // 3
+    "Moderate",      // 4
+    "Uncomfortable", // 5
+    "Distressing",   // 6
+    "Severe",        // 7
+    "Very severe",   // 8
+    "Intense",       // 9
+    "Unbearable",    // 10
+  ];
+
+  function updatePainDisplay(value) {
+    const v = parseInt(value, 10);
+    painNumber.textContent = v;
+    painDescriptor.textContent = DESCRIPTORS[v];
+
+    painNumber.classList.remove("level-low", "level-mid", "level-high");
+    if (v <= 3)      painNumber.classList.add("level-low");
+    else if (v <= 6) painNumber.classList.add("level-mid");
+    else             painNumber.classList.add("level-high");
+  }
+
+  slider.addEventListener("input", () => updatePainDisplay(slider.value));
+  updatePainDisplay(slider.value); // init
+
+  /* ── Goal chips (single-select) ──────────────────────────────── */
+  let selectedGoal = null;
+
+  document.querySelectorAll("#goalChips .chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      // Deselect all, then select clicked
+      document.querySelectorAll("#goalChips .chip").forEach((c) => c.classList.remove("selected"));
+      chip.classList.add("selected");
+      selectedGoal = chip.dataset.value;
     });
-  </script>
+  });
+
+  /* ── Submit ───────────────────────────────────────────────────── */
+  document.getElementById("btnNext").addEventListener("click", async () => {
+    const btn = document.getElementById("btnNext");
+    btn.disabled = true;
+    btn.textContent = "Saving…";
+
+    try {
+      await api.saveSelfReport(
+        parseInt(slider.value, 10),
+        document.getElementById("limitations").value.trim(),
+        selectedGoal,
+      );
+      api.navigate("assessment");
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = "Continue to Assessment";
+    }
+  });
+</script>
 </body>
 </html>

@@ -9,7 +9,9 @@ Provides:
 
 from __future__ import annotations
 
+import os
 import pathlib
+import sys
 from collections import deque
 from dataclasses import dataclass
 
@@ -32,7 +34,19 @@ LABELS: dict[int, str] = {
 FINGERTIPS = [4, 8, 12, 16, 20]
 PALM_POINTS = [0, 5, 9, 13, 17]
 
-DEFAULT_MODEL_PATH = pathlib.Path(__file__).parent.parent / "assets" / "models" / "geuse_multitask.pt"
+
+def _resolve_model_path() -> pathlib.Path:
+    """Return the default model checkpoint path.
+
+    In a PyInstaller frozen build assets/ is extracted into sys._MEIPASS.
+    In development mode it lives relative to this file.
+    """
+    if getattr(sys, 'frozen', False):
+        return pathlib.Path(sys._MEIPASS) / "assets" / "models" / "geuse_multitask.pt"
+    return pathlib.Path(__file__).parent.parent / "assets" / "models" / "geuse_multitask.pt"
+
+
+DEFAULT_MODEL_PATH = _resolve_model_path()
 
 
 # --------------------------------------------------------------------------- #

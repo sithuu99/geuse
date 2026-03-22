@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Progress</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+
+    .page { height: 100%; overflow-y: auto; }
+
+    /* ── Content wrapper ─────────────────────────────────────── */
+    .progress-wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2rem 2rem 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2.25rem;
+    }
+
+    /* ── Section ─────────────────────────────────────────────── */
+    .section-title {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-bottom: 1rem;
+    }
+
+    /* ── Overview stat grid ─────────────────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: .75rem;
+    }
+
+    @media (max-width: 580px) {
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .3rem;
+    }
+
+    .stat-card-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+    }
+
+    .stat-card-value {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .stat-card-sub {
+      font-size: .75rem;
+      color: var(--text-hint);
+    }
+
+    /* ── Chart section ───────────────────────────────────────── */
+    .chart-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .chart-canvas-wrap {
+      position: relative;
+      width: 100%;
+    }
+
+    #closureCanvas {
+      display: block;
+      width: 100%;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      margin-top: .85rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .legend-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .chart-empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      font-size: .88rem;
+      color: var(--text-hint);
+    }
+
+    /* ── Session history ─────────────────────────────────────── */
+    .session-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .session-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .85rem 1.1rem;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .session-date-block {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .35rem .65rem;
+      min-width: 3.5rem;
+    }
+
+    .session-date-day {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .session-date-mon {
+      font-size: .62rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+    }
+
+    .session-meta {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+    }
+
+    .session-meta-primary {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .session-meta-secondary {
+      font-size: .78rem;
+      color: var(--text-hint);
+    }
+
+    .session-pain-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .1rem;
+    }
+
+    .pain-badge-num {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .pain-badge-num.low  { color: var(--green);   }
+    .pain-badge-num.mid  { color: var(--warning);  }
+    .pain-badge-num.high { color: var(--danger);   }
+
+    .pain-badge-label {
+      font-size: .6rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+    }
+
+    /* ── Pain trend ──────────────────────────────────────────── */
+    .pain-trend-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .pain-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 80px;
+      margin-top: .75rem;
+    }
+
+    .pain-bar-item {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      cursor: default;
+    }
+
+    .pain-bar-fill {
+      border-radius: 3px 3px 0 0;
+      min-height: 3px;
+      transition: opacity 0.15s ease;
+    }
+
+    .pain-bar-fill.low  { background: var(--green);   }
+    .pain-bar-fill.mid  { background: var(--warning);  }
+    .pain-bar-fill.high { background: var(--danger);   }
+
+    .pain-bar-item:hover .pain-bar-fill { opacity: 0.75; }
+
+    /* Tooltip */
+    .pain-bar-item:hover .pain-tooltip { opacity: 1; pointer-events: none; }
+
+    .pain-tooltip {
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: var(--bg);
+      font-size: .68rem;
+      font-weight: 600;
+      padding: .25rem .5rem;
+      border-radius: var(--radius-xs);
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .pain-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 4px solid transparent;
+      border-top-color: var(--text);
+    }
+
+    .pain-trend-axis {
+      display: flex;
+      justify-content: space-between;
+      margin-top: .35rem;
+      font-size: .65rem;
+      color: var(--text-hint);
+    }
+
+    /* ── Loading ─────────────────────────────────────────────── */
+    #loadingView {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: .75rem;
+      color: var(--text-muted);
+      font-size: .9rem;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--border-md);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.85s linear infinite;
+      transition: none;
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
+    </div>
+    <div style="font-size:.82rem;font-weight:600;color:var(--text-hint);">Progress</div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="btnDone">Done</button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div id="loadingView">
+    <div class="spinner"></div>
+    Loading progress…
+  </div>
+
+  <!-- Content -->
+  <div class="page" id="mainView" style="display:none;">
+    <div class="progress-wrap">
+
+      <!-- §1 Overview -->
+      <section>
+        <p class="section-title">Overview</p>
+        <div class="stat-grid">
+          <div class="stat-card">
+            <div class="stat-card-label">Total sessions</div>
+            <div class="stat-card-value" id="ovTotalSessions">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Current streak</div>
+            <div class="stat-card-value" id="ovStreak">—</div>
+            <div class="stat-card-sub">days in a row</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Best hold</div>
+            <div class="stat-card-value" id="ovBestHold">—</div>
+            <div class="stat-card-sub">seconds</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-label">Avg pain (7d)</div>
+            <div class="stat-card-value" id="ovAvgPain">—</div>
+            <div class="stat-card-sub">out of 10</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- §2 Closure Progress -->
+      <section>
+        <p class="section-title">Closure Progress</p>
+        <div class="chart-card">
+          <div class="chart-canvas-wrap" id="chartWrap">
+            <canvas id="closureCanvas"></canvas>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#2a8f58;"></div>
+              Open Palm
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" id="legendMidDot"></div>
+              Mid Flexion
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot" style="background:#7b68ee;"></div>
+              Full Fist
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- §3 Session History -->
+      <section>
+        <p class="section-title">Session History</p>
+        <div class="session-list" id="sessionList">
+          <p class="text-muted text-sm">No sessions recorded yet.</p>
+        </div>
+      </section>
+
+      <!-- §4 Pain Trend -->
+      <section>
+        <p class="section-title">Pain Trend</p>
+        <div class="pain-trend-wrap">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span class="text-hint text-xs" style="font-weight:600;letter-spacing:.06em;text-transform:uppercase;">
+              Last 30 check-ins
+            </span>
+            <div style="display:flex;gap:.75rem;">
+              <span class="legend-item"><div class="legend-dot" style="background:var(--green);"></div> 0–3</span>
+              <span class="legend-item"><div class="legend-dot" style="background:var(--warning);"></div> 4–6</span>
+              <span class="legend-item"><div class="legend-dot" style="background:var(--danger);"></div> 7–10</span>
+            </div>
+          </div>
+          <div class="pain-bars" id="painBars">
+            <div style="font-size:.82rem;color:var(--text-hint);margin:auto;">No check-in data yet.</div>
+          </div>
+          <div class="pain-trend-axis" id="painAxis"></div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+</div><!-- /.app-shell -->
+
+
+<script>
+  /* ── Theme toggle ────────────────────────────────────────────── */
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    const isDark = theme === "dark";
+    html.setAttribute("data-theme", isDark ? "dark" : "light");
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title     = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+    // Redraw chart in new theme colours
+    if (window._chartData) drawClosureChart(window._chartData);
+  });
+</script>
+
+<script src="../js/bridge.js"></script>
+<script>
+/* ── Done button ─────────────────────────────────────────────── */
+document.getElementById("btnDone").addEventListener("click", async () => {
+  try {
+    const res = await api.getProfile();
+    api.navigate(res.profile?.name ? "dashboard" : "welcome");
+  } catch (_) {
+    api.navigate("welcome");
+  }
+});
+
+/* ── Helpers ─────────────────────────────────────────────────── */
+function fmtDate(isoStr) {
+  if (!isoStr) return { day: "—", mon: "—", full: "—" };
+  try {
+    const d = new Date(isoStr.replace(" ", "T"));
+    return {
+      day:  d.getDate(),
+      mon:  d.toLocaleString(undefined, { month: "short" }).toUpperCase(),
+      full: d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
+    };
+  } catch (_) {
+    return { day: "—", mon: "—", full: isoStr.slice(0, 10) };
+  }
+}
+
+function fmtDuration(s) {
+  if (!s) return "—";
+  const m = Math.round(s / 60);
+  return m < 1 ? `${s}s` : `${m} min`;
+}
+
+function painClass(v) {
+  return v <= 3 ? "low" : v <= 6 ? "mid" : "high";
+}
+
+/* ── Closure chart (Canvas 2D) ───────────────────────────────── */
+function drawClosureChart(chartData) {
+  const canvas = document.getElementById("closureCanvas");
+  const wrap   = document.getElementById("chartWrap");
+
+  if (!chartData || chartData.length === 0) {
+    canvas.style.display = "none";
+    wrap.innerHTML = `<div class="chart-empty">Complete at least one assessment to see closure progress.</div>`;
+    return;
+  }
+
+  canvas.style.display = "block";
+
+  const isDark   = html.getAttribute("data-theme") === "dark";
+  const dpr      = window.devicePixelRatio || 1;
+  const cssW     = wrap.offsetWidth || 680;
+  const cssH     = 260;
+
+  canvas.style.height = cssH + "px";
+  canvas.width        = cssW * dpr;
+  canvas.height       = cssH * dpr;
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, cssW, cssH);
+
+  // Colours
+  const COL = {
+    grid:    isDark ? "rgba(255,245,220,0.07)" : "rgba(60,40,10,0.07)",
+    axis:    isDark ? "rgba(255,245,220,0.12)" : "rgba(60,40,10,0.12)",
+    label:   isDark ? "#5c5448"  : "#a89880",
+    palm:    "#2a8f58",
+    midFlex: isDark ? "#e8c97a"  : "#c4872a",
+    fist:    "#7b68ee",
+  };
+
+  // Update legend mid dot
+  const midDot = document.getElementById("legendMidDot");
+  if (midDot) midDot.style.background = COL.midFlex;
+
+  // Padding
+  const PL = 48, PR = 20, PT = 16, PB = 36;
+  const W  = cssW - PL - PR;
+  const H  = cssH - PT - PB;
+  const n  = chartData.length;
+
+  function xPos(i) {
+    return PL + (n === 1 ? W / 2 : (i / (n - 1)) * W);
+  }
+  function yPos(v) {
+    return PT + H - v * H;
+  }
+
+  // Grid lines + Y labels
+  ctx.textAlign    = "right";
+  ctx.font         = `${11 * (1 / dpr) + 11}px system-ui, sans-serif`;
+  ctx.font         = "11px system-ui, sans-serif";
+
+  [0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
+    const y = yPos(v);
+    ctx.beginPath();
+    ctx.strokeStyle = v === 0 ? COL.axis : COL.grid;
+    ctx.lineWidth   = 1;
+    ctx.moveTo(PL, y);
+    ctx.lineTo(PL + W, y);
+    ctx.stroke();
+
+    ctx.fillStyle = COL.label;
+    ctx.textAlign = "right";
+    ctx.fillText(v.toFixed(2), PL - 6, y + 4);
+  });
+
+  // X axis baseline
+  ctx.beginPath();
+  ctx.strokeStyle = COL.axis;
+  ctx.lineWidth   = 1;
+  ctx.moveTo(PL, PT + H);
+  ctx.lineTo(PL + W, PT + H);
+  ctx.stroke();
+
+  // Series
+  const SERIES = [
+    { key: "palm",     color: COL.palm,    label: "Open Palm"   },
+    { key: "mid_flex", color: COL.midFlex, label: "Mid Flexion" },
+    { key: "fist",     color: COL.fist,    label: "Full Fist"   },
+  ];
+
+  SERIES.forEach(({ key, color }) => {
+    const pts = chartData
+      .map((d, i) => d[key] != null ? { x: xPos(i), y: yPos(d[key]) } : null)
+      .filter(Boolean);
+
+    if (pts.length === 0) return;
+
+    // Line
+    if (pts.length >= 2) {
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2;
+      ctx.lineJoin    = "round";
+      ctx.lineCap     = "round";
+      pts.forEach(({ x, y }, j) => j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
+      ctx.stroke();
+    }
+
+    // Dots
+    pts.forEach(({ x, y }) => {
+      ctx.beginPath();
+      ctx.fillStyle = color;
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+      // White ring
+      ctx.beginPath();
+      ctx.strokeStyle = isDark ? "#161512" : "#ffffff";
+      ctx.lineWidth = 1.5;
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+  });
+
+  // X axis labels
+  ctx.fillStyle = COL.label;
+  ctx.textAlign = "center";
+  const step = Math.max(1, Math.ceil(n / 8));
+  chartData.forEach((d, i) => {
+    if (i % step === 0 || i === n - 1) {
+      ctx.fillText(`#${d.idx}`, xPos(i), cssH - 6);
+    }
+  });
+
+  // X axis title
+  ctx.fillStyle = COL.label;
+  ctx.fillText("Assessment", PL + W / 2, cssH - 6);
+}
+
+/* ── Session history ─────────────────────────────────────────── */
+function renderSessionHistory(sessions) {
+  const list = document.getElementById("sessionList");
+
+  if (!sessions || sessions.length === 0) {
+    list.innerHTML = `<p class="text-muted text-sm">No sessions recorded yet.</p>`;
+    return;
+  }
+
+  list.innerHTML = sessions.map(s => {
+    const { day, mon } = fmtDate(s.completed_at);
+    const exCount  = s.exercises?.length || 0;
+    const dur      = fmtDuration(s.duration_s);
+    const pain     = s.pain_before ?? s.pain_after ?? null;
+    const painNum  = pain !== null ? pain : "—";
+    const pClass   = pain !== null ? painClass(pain) : "low";
+
+    return `
+      <div class="session-row">
+        <div class="session-date-block">
+          <div class="session-date-day">${day}</div>
+          <div class="session-date-mon">${mon}</div>
+        </div>
+        <div class="session-meta">
+          <div class="session-meta-primary">
+            ${exCount} exercise${exCount !== 1 ? "s" : ""}
+          </div>
+          <div class="session-meta-secondary">${dur}</div>
+        </div>
+        <div class="session-pain-badge">
+          <div class="pain-badge-num ${pClass}">${painNum}</div>
+          <div class="pain-badge-label">pain</div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+/* ── Pain trend ──────────────────────────────────────────────── */
+function renderPainTrend(painHistory) {
+  const barsEl = document.getElementById("painBars");
+  const axisEl = document.getElementById("painAxis");
+
+  if (!painHistory || painHistory.length === 0) {
+    barsEl.innerHTML = `<div style="font-size:.82rem;color:var(--text-hint);margin:auto;">No check-in data yet.</div>`;
+    return;
+  }
+
+  barsEl.innerHTML = painHistory.map(p => {
+    const v     = p.value;
+    const pct   = Math.max(4, Math.round((v / 10) * 100));
+    const cls   = painClass(v);
+    const label = p.date ? p.date.slice(0, 10) : "";
+    const tip   = `${label ? label + ": " : ""}Pain ${v}/10`;
+    return `
+      <div class="pain-bar-item">
+        <div class="pain-tooltip">${tip}</div>
+        <div class="pain-bar-fill ${cls}" style="height:${pct}%;"></div>
+      </div>
+    `;
+  }).join("");
+
+  // Axis: first and last date
+  if (painHistory.length >= 2) {
+    const first = painHistory[0].date?.slice(0, 10) || "";
+    const last  = painHistory[painHistory.length - 1].date?.slice(0, 10) || "";
+    axisEl.innerHTML = `<span>${first}</span><span>${last}</span>`;
+  }
+}
+
+/* ── Boot ────────────────────────────────────────────────────── */
+async function boot() {
+  try {
+    const data = await api.getProgressData();
+
+    if (!data.ok) throw new Error(data.error || "failed");
+
+    // Overview
+    document.getElementById("ovTotalSessions").textContent = data.total_sessions ?? "—";
+    document.getElementById("ovStreak").textContent        = data.streak ?? 0;
+    document.getElementById("ovBestHold").textContent      = data.best_hold > 0 ? data.best_hold : "—";
+    document.getElementById("ovAvgPain").textContent       = data.avg_pain > 0 ? data.avg_pain : "—";
+
+    // Chart
+    window._chartData = data.closure_chart || [];
+    drawClosureChart(window._chartData);
+
+    // History
+    renderSessionHistory(data.session_history || []);
+
+    // Pain trend
+    renderPainTrend(data.pain_history || []);
+
+    document.getElementById("loadingView").style.display = "none";
+    document.getElementById("mainView").style.display    = "block";
+
+  } catch (err) {
+    document.getElementById("loadingView").innerHTML =
+      `<p class="text-muted text-sm">Failed to load progress data.</p>`;
+  }
+}
+
+if (window.pywebview?.api) {
+  boot();
+} else {
+  window.addEventListener("pywebviewready", boot, { once: true });
+}
+</script>
+</body>
+</html>

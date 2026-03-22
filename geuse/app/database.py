@@ -15,11 +15,26 @@ JSON columns store arbitrary nested data without a fixed schema.
 from __future__ import annotations
 
 import json
+import os
 import pathlib
 import sqlite3
+import sys
 from typing import Optional
 
-DB_PATH = pathlib.Path(__file__).parent.parent / "geuse.db"
+
+def _resolve_db_path() -> pathlib.Path:
+    """Return the database path.
+
+    In a PyInstaller frozen build the exe directory is writable and is used
+    so that user data persists across runs. In development mode the db lives
+    alongside main.py in geuse/.
+    """
+    if getattr(sys, 'frozen', False):
+        return pathlib.Path(os.path.dirname(sys.executable)) / "geuse.db"
+    return pathlib.Path(__file__).parent.parent / "geuse.db"
+
+
+DB_PATH = _resolve_db_path()
 
 
 # --------------------------------------------------------------------------- #
@@ -85,6 +100,19 @@ def init_db() -> None:
             );
 
             -- --------------------------------------------------------
+            -- self_report  (daily pre-session check-in)
+            -- --------------------------------------------------------
+            CREATE TABLE IF NOT EXISTS self_report (
+                id           INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id      INTEGER NOT NULL DEFAULT 1,
+                pain_level   INTEGER NOT NULL DEFAULT 0,
+                limitations  TEXT    NOT NULL DEFAULT '',
+                goal         TEXT    NOT NULL DEFAULT '',
+                created_at   TEXT    NOT NULL DEFAULT (datetime('now')),
+                FOREIGN KEY (user_id) REFERENCES user(id)
+            );
+
+            -- --------------------------------------------------------
             -- session  (completed workout log)
             -- --------------------------------------------------------
             CREATE TABLE IF NOT EXISTS session (
@@ -137,6 +165,28 @@ def get_user() -> Optional[dict]:
     d = dict(row)
     d["goals"] = json.loads(d["goals"])
     return d
+
+
+# --------------------------------------------------------------------------- #
+# self_report
+# --------------------------------------------------------------------------- #
+
+def save_self_report(pain_level: int, limitations: str = "", goal: str = "") -> int:
+    """Insert a daily check-in record; returns the new row id."""
+    with _connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO self_report (user_id, pain_level, limitations, goal) VALUES (1, ?, ?, ?)",
+            (pain_level, limitations, goal),
+        )
+        return cur.lastrowid
+
+
+def get_latest_self_report() -> Optional[dict]:
+    with _connect() as conn:
+        row = conn.execute(
+            "SELECT * FROM self_report WHERE user_id=1 ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+    return dict(row) if row else None
 
 
 # --------------------------------------------------------------------------- #
@@ -252,6 +302,161 @@ def get_latest_session() -> Optional[dict]:
     d = dict(row)
     d["exercises"] = json.loads(d["exercises"])
     return d
+
+
+def _compute_streak(sessions: list) -> int:
+    """Count consecutive days ending today (or yesterday) with at least one session."""
+    import datetime
+    dates: set = set()
+    for s in sessions:
+        try:
+            dates.add(datetime.datetime.strptime(s["completed_at"][:19], "%Y-%m-%d %H:%M:%S").date())
+        except Exception:
+            pass
+    if not dates:
+        return 0
+    today = datetime.date.today()
+    check = today if today in dates else today - datetime.timedelta(days=1)
+    streak = 0
+    while check in dates:
+        streak += 1
+        check -= datetime.timedelta(days=1)
+    return streak
+
+
+def get_session_history() -> dict:
+    """Return aggregated session data for the dashboard."""
+    with _connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM session WHERE user_id=1 ORDER BY id DESC LIMIT 30"
+        ).fetchall()
+        pain_rows = conn.execute(
+            "SELECT pain_level FROM self_report WHERE user_id=1 ORDER BY id DESC LIMIT 5"
+        ).fetchall()
+        total = conn.execute(
+            "SELECT COUNT(*) FROM session WHERE user_id=1"
+        ).fetchone()[0]
+
+    sessions = []
+    for row in rows:
+        d = dict(row)
+        d["exercises"] = json.loads(d["exercises"])
+        sessions.append(d)
+
+    pain_history = [r["pain_level"] for r in reversed(pain_rows)]
+    total_exercises = sum(len(s["exercises"]) for s in sessions)
+
+    return {
+        "sessions": sessions,
+        "pain_history": pain_history,
+        "streak": _compute_streak(sessions),
+        "total_sessions": total,
+        "total_exercises": total_exercises,
+    }
+
+
+def reset_db() -> None:
+    """Drop all tables and recreate the schema. Wipes all user data."""
+    with _connect() as conn:
+        conn.executescript("""
+            DROP TABLE IF EXISTS session;
+            DROP TABLE IF EXISTS rehab_plan;
+            DROP TABLE IF EXISTS self_report;
+            DROP TABLE IF EXISTS assessment;
+            DROP TABLE IF EXISTS user;
+        """)
+    init_db()
+
+
+def get_progress_data() -> dict:
+    """Return all data needed for the progress page in one call."""
+    with _connect() as conn:
+        session_rows = conn.execute(
+            "SELECT * FROM session WHERE user_id=1 ORDER BY id DESC LIMIT 20"
+        ).fetchall()
+        assessment_rows = conn.execute(
+            "SELECT * FROM assessment WHERE user_id=1 ORDER BY id ASC"
+        ).fetchall()
+        pain_rows = conn.execute(
+            "SELECT pain_level, created_at FROM self_report "
+            "WHERE user_id=1 ORDER BY id DESC LIMIT 30"
+        ).fetchall()
+        total_sessions = conn.execute(
+            "SELECT COUNT(*) FROM session WHERE user_id=1"
+        ).fetchone()[0]
+
+    # Session list
+    session_list = []
+    for row in session_rows:
+        d = dict(row)
+        d["exercises"] = json.loads(d["exercises"])
+        session_list.append(d)
+
+    # Pain history oldest-first for chart; most-recent-first slice for avg
+    pain_history = [
+        {"value": r["pain_level"], "date": r["created_at"]}
+        for r in reversed(pain_rows)
+    ]
+    recent_pain = [r["pain_level"] for r in pain_rows[:7]]
+    avg_pain = round(sum(recent_pain) / len(recent_pain), 1) if recent_pain else 0.0
+
+    # Streak
+    streak = _compute_streak(session_list)
+
+    # Process assessments: closure chart + best hold
+    best_hold = 0.0
+    closure_chart = []
+
+    for i, row in enumerate(assessment_rows):
+        d = dict(row)
+        try:
+            results = json.loads(d["results"])
+        except Exception:
+            continue
+
+        ex_list = results.get("exercises", [])
+        point = {"idx": i + 1, "date": d["created_at"]}
+
+        for ex in ex_list:
+            ex_type = ex.get("exercise", "")
+            attempts = ex.get("attempts", [])
+
+            closures = []
+            for a in attempts:
+                v = a.get("closure")
+                h = a.get("hold_s", 0) or 0
+                try:
+                    if float(h) > best_hold:
+                        best_hold = float(h)
+                except Exception:
+                    pass
+                if v is not None:
+                    try:
+                        closures.append(float(v))
+                    except Exception:
+                        pass
+
+            avg_c = round(sum(closures) / len(closures), 3) if closures else None
+
+            if ex_type == "open_palm":
+                point["palm"] = avg_c
+            elif ex_type == "mid_flexion":
+                point["mid_flex"] = avg_c
+            elif ex_type == "full_fist":
+                point["fist"] = avg_c
+
+        if any(k in point for k in ("palm", "mid_flex", "fist")):
+            closure_chart.append(point)
+
+    return {
+        "total_sessions": total_sessions,
+        "streak": streak,
+        "best_hold": round(best_hold, 1),
+        "avg_pain": avg_pain,
+        "closure_chart": closure_chart,
+        "session_history": session_list,
+        "pain_history": pain_history,
+    }
 
 
 def get_all_sessions() -> list[dict]:

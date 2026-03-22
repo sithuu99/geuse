@@ -174,12 +174,6 @@ class CameraStream:
             else:
                 label = "hand detected"
 
-        # Overlay label text
-        cv2.putText(
-            frame, label,
-            (16, 40), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 100), 2, cv2.LINE_AA,
-        )
-
         # Encode to JPEG → base64
         _, buf = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
         jpeg_b64 = base64.b64encode(buf).decode("ascii")

@@ -66,6 +66,25 @@ const api = (() => {
   const getProfile = () => call("get_profile");
 
   /* -------------------------------------------------------------- */
+  /* Self-report (onboarding check-in)                              */
+  /* -------------------------------------------------------------- */
+  /**
+   * Persist a full onboarding check-in (pain + limitations + goal).
+   * @param {number} painLevel    - 0–10
+   * @param {string} limitations  - free text
+   * @param {string} goal         - selected goal value
+   */
+  const saveSelfReport = (painLevel, limitations, goal) =>
+    call("save_self_report", painLevel, limitations, goal);
+
+  /* -------------------------------------------------------------- */
+  /* Daily check-in (returning-user)                                */
+  /* -------------------------------------------------------------- */
+  /** Persist a returning-user daily check-in (pain level only). */
+  const saveDailyCheckin = (painLevel) =>
+    call("save_daily_checkin", painLevel);
+
+  /* -------------------------------------------------------------- */
   /* Assessment                                                      */
   /* -------------------------------------------------------------- */
   /**
@@ -87,6 +106,21 @@ const api = (() => {
   const getPlan = () => call("get_plan");
 
   /* -------------------------------------------------------------- */
+  /* App reset                                                      */
+  /* -------------------------------------------------------------- */
+  /** Wipe all data and restart from welcome.html. */
+  const resetApp = () => call("reset_app");
+
+  /* -------------------------------------------------------------- */
+  /* Session history (dashboard)                                    */
+  /* -------------------------------------------------------------- */
+  /** Returns { ok, sessions, pain_history, streak, total_sessions, total_exercises } */
+  const getSessionHistory = () => call("get_session_history");
+
+  /** Returns { ok, total_sessions, streak, best_hold, avg_pain, closure_chart, session_history, pain_history } */
+  const getProgressData = () => call("get_progress_data");
+
+  /* -------------------------------------------------------------- */
   /* Session                                                         */
   /* -------------------------------------------------------------- */
   /**
@@ -102,8 +136,13 @@ const api = (() => {
     navigate,
     startCamera, stopCamera, getFrame,
     saveProfile, getProfile,
+    saveSelfReport,
+    saveDailyCheckin,
     saveAssessmentResult,
     generateAndSavePlan, getPlan,
+    getSessionHistory,
+    getProgressData,
     saveSessionResult,
+    resetApp,
   };
 })();

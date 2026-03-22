@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Daily Check-In</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+
+    .page { height: 100%; overflow-y: auto; }
+
+    /* ── Greeting ─────────────────────────────────────────────── */
+    .greeting-block {
+      margin-top: 1.5rem;
+    }
+
+    .greeting-eyebrow {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: .5rem;
+    }
+
+    .greeting-heading {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.8vw, 2rem);
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      color: var(--text);
+    }
+
+    /* ── Pain card ────────────────────────────────────────────── */
+    .pain-card {
+      margin-top: 2rem;
+    }
+
+    .pain-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .pain-number {
+      font-family: var(--font-serif);
+      font-size: 4rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.15s ease;
+    }
+
+    .pain-number.level-low  { color: var(--green);   }
+    .pain-number.level-mid  { color: var(--warning);  }
+    .pain-number.level-high { color: var(--danger);   }
+
+    .pain-descriptor {
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--text-hint);
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      min-height: 1.2em;
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: .78rem;
+      color: var(--text-hint);
+      font-weight: 500;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    .page-footer {
+      padding: 2rem 0 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+
+    .footer-link {
+      font-size: .8rem;
+      color: var(--text-hint);
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .footer-link:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
+    </div>
+    <div></div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="btnProfile" title="Edit profile">Profile</button>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="page" style="padding: 2rem; max-width: 560px; margin: 0 auto; height: 100%; overflow-y: auto;">
+
+      <div class="greeting-block">
+        <p class="greeting-eyebrow">Welcome back</p>
+        <h1 class="greeting-heading" id="greetingHeading">Ready to practise?</h1>
+      </div>
+
+      <div class="pain-card card mt-4">
+        <p class="text-hint text-xs font-semibold" style="text-transform:uppercase; letter-spacing:.07em; margin-bottom:.75rem;">
+          Pain level right now
+        </p>
+
+        <div class="pain-display">
+          <span class="pain-number level-low" id="painNumber">0</span>
+          <span class="pain-descriptor" id="painDescriptor">No pain</span>
+        </div>
+
+        <div class="slider-row">
+          <input
+            type="range"
+            id="painSlider"
+            min="0" max="10" value="0" step="1"
+            aria-label="Pain level 0 to 10"
+          />
+          <div class="slider-labels">
+            <span>No pain</span>
+            <span>Severe</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="page-footer">
+        <button class="btn btn-primary btn-full btn-lg" id="btnStart">
+          Start Today's Session
+        </button>
+        <p class="footer-link" id="btnRedo">Update assessment first</p>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /.app-shell -->
+
+
+<script>
+  /* ── Theme toggle ─────────────────────────────────────────────── */
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    html.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+    const isDark = theme === "dark";
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+<script src="../js/bridge.js"></script>
+<script>
+  const DESCRIPTORS = [
+    "No pain",       // 0
+    "Very mild",     // 1
+    "Mild",          // 2
+    "Noticeable",    // 3
+    "Moderate",      // 4
+    "Uncomfortable", // 5
+    "Distressing",   // 6
+    "Severe",        // 7
+    "Very severe",   // 8
+    "Intense",       // 9
+    "Unbearable",    // 10
+  ];
+
+  const slider       = document.getElementById("painSlider");
+  const painNumber   = document.getElementById("painNumber");
+  const painDesc     = document.getElementById("painDescriptor");
+
+  function updatePain(v) {
+    v = parseInt(v, 10);
+    painNumber.textContent = v;
+    painDesc.textContent   = DESCRIPTORS[v];
+    painNumber.classList.remove("level-low", "level-mid", "level-high");
+    if      (v <= 3) painNumber.classList.add("level-low");
+    else if (v <= 6) painNumber.classList.add("level-mid");
+    else             painNumber.classList.add("level-high");
+  }
+
+  slider.addEventListener("input", () => updatePain(slider.value));
+  updatePain(slider.value);
+
+  /* ── Load profile to personalise greeting ─────────────────── */
+  (async () => {
+    try {
+      const res = await api.getProfile();
+      const name = res.profile?.name;
+      if (name) {
+        document.getElementById("greetingHeading").textContent =
+          `Good to see you, ${name}.`;
+      }
+    } catch (_) { /* non-critical */ }
+  })();
+
+  /* ── Start session ────────────────────────────────────────── */
+  document.getElementById("btnStart").addEventListener("click", async () => {
+    const btn = document.getElementById("btnStart");
+    btn.disabled = true;
+    btn.textContent = "Starting…";
+
+    const painLevel = parseInt(slider.value, 10);
+    localStorage.setItem("geuse-pain-before", painLevel);
+
+    try {
+      await api.saveDailyCheckin(painLevel);
+      api.navigate("dashboard");
+    } catch (_) {
+      btn.disabled = false;
+      btn.textContent = "Start Today's Session";
+    }
+  });
+
+  /* ── Navigation shortcuts ────────────────────────────────── */
+  document.getElementById("btnProfile").addEventListener("click", () =>
+    api.navigate("profile")
+  );
+
+  document.getElementById("btnRedo").addEventListener("click", () =>
+    api.navigate("self_report")
+  );
+</script>
+</body>
+</html>

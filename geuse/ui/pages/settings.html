@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Settings</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <style>
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+
+    .page { height: 100%; overflow-y: auto; }
+
+    /* ── Content wrapper ──────────────────────────────────────── */
+    .settings-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 2rem 3rem;
+    }
+
+    /* ── Section ──────────────────────────────────────────────── */
+    .settings-section {
+      padding: 1.75rem 0 0;
+    }
+
+    .settings-section + .settings-section {
+      border-top: 1px solid var(--border);
+      margin-top: .25rem;
+    }
+
+    .section-title {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-bottom: 1rem;
+    }
+
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    /* ── Setting row ──────────────────────────────────────────── */
+    .setting-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: .95rem 1.25rem;
+    }
+
+    .setting-row + .setting-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .setting-row-info {}
+
+    .setting-row-label {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: .15rem;
+    }
+
+    .setting-row-desc {
+      font-size: .78rem;
+      color: var(--text-hint);
+    }
+
+    /* ── Toggle switch ────────────────────────────────────────── */
+    .toggle-switch {
+      display: inline-flex;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch input { display: none; }
+
+    .toggle-track {
+      display: block;
+      width: 40px;
+      height: 22px;
+      background: var(--border-md);
+      border-radius: 11px;
+      position: relative;
+      transition: background-color 0.2s ease;
+    }
+
+    .toggle-switch input:checked + .toggle-track {
+      background: var(--accent);
+    }
+
+    .toggle-thumb {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+      transition: transform 0.2s var(--ease-spring);
+    }
+
+    .toggle-switch input:checked + .toggle-track .toggle-thumb {
+      transform: translateX(18px);
+    }
+
+    /* ── Form rows within section card ───────────────────────── */
+    .form-section {
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+    }
+
+    .form-section + .form-row-footer {
+      padding: .75rem 1.25rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    .field-label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: .35rem;
+    }
+
+    /* ── Warning text ─────────────────────────────────────────── */
+    .warning-text {
+      font-size: .8rem;
+      color: var(--warning);
+      font-weight: 500;
+    }
+
+    /* ── Danger button ────────────────────────────────────────── */
+    .btn-danger {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      border: 1px solid var(--danger);
+      border-radius: var(--radius-sm);
+      background: transparent;
+      color: var(--danger);
+      font-family: var(--font-sans);
+      font-size: .9rem;
+      font-weight: 600;
+      padding: .6rem 1.3rem;
+      cursor: pointer;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-subtle);
+    }
+
+    /* ── Inline confirm row ───────────────────────────────────── */
+    .confirm-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      flex-wrap: wrap;
+    }
+
+    .confirm-question {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text);
+      flex: 1;
+      min-width: 8rem;
+    }
+
+    /* ── About block ──────────────────────────────────────────── */
+    .about-block {
+      padding: 1.1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .4rem;
+    }
+
+    .about-name {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .about-version {
+      font-size: .78rem;
+      color: var(--text-hint);
+      font-weight: 500;
+    }
+
+    .about-desc {
+      font-size: .85rem;
+      color: var(--text-muted);
+      margin-top: .15rem;
+    }
+
+    /* ── Save feedback ────────────────────────────────────────── */
+    .save-feedback {
+      font-size: .8rem;
+      color: var(--green);
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .save-feedback.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
+    </div>
+    <div style="font-size:.82rem;font-weight:600;color:var(--text-hint);">Settings</div>
+    <div class="topbar-right">
+      <button class="btn btn-ghost btn-sm" id="btnDone">Done</button>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
+    </div>
+  </header>
+
+  <div class="page">
+    <div class="settings-wrap">
+
+      <!-- ── 1. Appearance ─────────────────────────────────────── -->
+      <section class="settings-section" style="padding-top:.75rem;">
+        <p class="section-title">Appearance</p>
+        <div class="section-card">
+          <div class="setting-row">
+            <div class="setting-row-info">
+              <div class="setting-row-label">Dark mode</div>
+              <div class="setting-row-desc">Switch between light and dark theme</div>
+            </div>
+            <label class="toggle-switch" for="darkModeToggle" aria-label="Toggle dark mode">
+              <input type="checkbox" id="darkModeToggle" />
+              <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 2. Profile ─────────────────────────────────────────── -->
+      <section class="settings-section">
+        <p class="section-title">Profile</p>
+        <div class="section-card">
+          <div class="form-section">
+            <div>
+              <label class="field-label" for="settName">Name</label>
+              <input type="text" id="settName" placeholder="Your name" />
+            </div>
+            <div>
+              <label class="field-label" for="settHand">Affected hand</label>
+              <select id="settHand">
+                <option value="right">Right</option>
+                <option value="left">Left</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div>
+              <label class="field-label" for="settCondition">Condition / injury</label>
+              <input type="text" id="settCondition" placeholder="e.g. post-surgery, arthritis…" />
+            </div>
+          </div>
+          <div class="form-row-footer">
+            <button class="btn btn-primary btn-sm" id="btnSaveProfile">Save profile</button>
+            <span class="save-feedback" id="saveProfileFeedback">Saved</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 3. Rehabilitation Plan ─────────────────────────────── -->
+      <section class="settings-section">
+        <p class="section-title">Rehabilitation Plan</p>
+        <div class="section-card">
+          <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:.6rem;">
+            <div>
+              <div class="setting-row-label">Reassess</div>
+              <div class="setting-row-desc">
+                Redo the daily check-in and motion assessment to generate an updated plan.
+              </div>
+              <p class="warning-text mt-1">This will replace your current plan.</p>
+            </div>
+            <button class="btn btn-ghost btn-sm" id="btnReassess">Start Reassessment</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 4. Data ────────────────────────────────────────────── -->
+      <section class="settings-section">
+        <p class="section-title">Data</p>
+        <div class="section-card">
+          <div class="setting-row" style="flex-direction:column; align-items:flex-start; gap:.75rem;">
+            <div>
+              <div class="setting-row-label">Clear all data</div>
+              <div class="setting-row-desc">
+                Permanently delete all sessions, assessments, and your profile.
+                The app will restart from the beginning.
+              </div>
+            </div>
+            <!-- Initial button -->
+            <div id="clearDataRow">
+              <button class="btn-danger" id="btnClearData">Clear all data</button>
+            </div>
+            <!-- Inline confirmation (hidden by default) -->
+            <div id="clearDataConfirm" style="display:none;" class="confirm-row">
+              <span class="confirm-question">Are you sure? This cannot be undone.</span>
+              <button class="btn-danger btn-sm" id="btnConfirmClear" style="font-size:.82rem;padding:.45rem 1rem;">Yes, delete everything</button>
+              <button class="btn btn-ghost btn-sm" id="btnCancelClear">No, keep data</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 5. About ───────────────────────────────────────────── -->
+      <section class="settings-section">
+        <p class="section-title">About</p>
+        <div class="section-card">
+          <div class="about-block">
+            <div class="about-name">Geuse <span class="about-version">v1.0.0</span></div>
+            <div class="about-desc">AI-powered hand rehabilitation monitoring</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+</div><!-- /.app-shell -->
+
+
+<script>
+  /* ── Theme toggle ─────────────────────────────────────────────── */
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+  const darkSwitch  = document.getElementById("darkModeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    const isDark = theme === "dark";
+    html.setAttribute("data-theme", isDark ? "dark" : "light");
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title     = isDark ? "Switch to light mode" : "Switch to dark mode";
+    darkSwitch.checked    = isDark;
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+
+  // Topbar theme-toggle button
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+
+  // Appearance section toggle switch
+  darkSwitch.addEventListener("change", () => {
+    const next = darkSwitch.checked ? "dark" : "light";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+<script src="../js/bridge.js"></script>
+<script>
+  /* ── Done / back ─────────────────────────────────────────────── */
+  document.getElementById("btnDone").addEventListener("click", async () => {
+    try {
+      const res = await api.getProfile();
+      api.navigate(res.profile?.name ? "dashboard" : "welcome");
+    } catch (_) {
+      api.navigate("welcome");
+    }
+  });
+
+  /* ── Profile ─────────────────────────────────────────────────── */
+  let currentProfile = {};
+
+  async function loadProfile() {
+    try {
+      const res = await api.getProfile();
+      currentProfile = res.profile || {};
+      document.getElementById("settName").value      = currentProfile.name          || "";
+      document.getElementById("settHand").value      = currentProfile.affected_hand || "right";
+      document.getElementById("settCondition").value = currentProfile.condition     || "";
+    } catch (_) { /* non-critical */ }
+  }
+
+  document.getElementById("btnSaveProfile").addEventListener("click", async () => {
+    const btn      = document.getElementById("btnSaveProfile");
+    const feedback = document.getElementById("saveProfileFeedback");
+    btn.disabled   = true;
+
+    try {
+      await api.saveProfile({
+        ...currentProfile,
+        name:          document.getElementById("settName").value.trim(),
+        affected_hand: document.getElementById("settHand").value,
+        condition:     document.getElementById("settCondition").value.trim(),
+      });
+      // Refresh local copy
+      currentProfile.name          = document.getElementById("settName").value.trim();
+      currentProfile.affected_hand = document.getElementById("settHand").value;
+      currentProfile.condition     = document.getElementById("settCondition").value.trim();
+
+      feedback.classList.add("visible");
+      setTimeout(() => feedback.classList.remove("visible"), 2000);
+    } catch (_) { /* swallow */ }
+
+    btn.disabled = false;
+  });
+
+  /* ── Reassess ────────────────────────────────────────────────── */
+  document.getElementById("btnReassess").addEventListener("click", () => {
+    api.navigate("self_report");
+  });
+
+  /* ── Clear all data ──────────────────────────────────────────── */
+  const clearDataRow     = document.getElementById("clearDataRow");
+  const clearDataConfirm = document.getElementById("clearDataConfirm");
+
+  document.getElementById("btnClearData").addEventListener("click", () => {
+    clearDataRow.style.display     = "none";
+    clearDataConfirm.style.display = "flex";
+  });
+
+  document.getElementById("btnCancelClear").addEventListener("click", () => {
+    clearDataConfirm.style.display = "none";
+    clearDataRow.style.display     = "block";
+  });
+
+  document.getElementById("btnConfirmClear").addEventListener("click", async () => {
+    const btn = document.getElementById("btnConfirmClear");
+    btn.disabled    = true;
+    btn.textContent = "Clearing…";
+    try {
+      await api.resetApp();
+      // reset_app navigates to welcome.html from Python side
+    } catch (_) {
+      api.navigate("welcome");
+    }
+  });
+
+  /* ── Boot ────────────────────────────────────────────────────── */
+  loadProfile();
+</script>
+</body>
+</html>

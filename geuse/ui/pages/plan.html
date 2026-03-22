@@ -1,101 +1,357 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Geuse — Your Plan</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
   <style>
-    .exercise-list { display: flex; flex-direction: column; gap: .8rem; margin-top: 1rem; }
-    .exercise-item {
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+    .page { height: 100%; overflow-y: auto; }
+
+    /* ── Loading state ────────────────────────────────────────── */
+    .loading-row {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      background: var(--surface-2);
+      gap: .75rem;
+      color: var(--text-muted);
+      font-size: .9rem;
+      margin-top: 2rem;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-md);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      transition: none;
+      animation: spin 0.85s linear infinite;
+      flex-shrink: 0;
+    }
+
+    /* ── Plan meta stats ──────────────────────────────────────── */
+    .plan-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin-top: 1.5rem;
+    }
+
+    .meta-stat {
+      display: flex;
+      flex-direction: column;
+      gap: .2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .65rem 1rem;
+      min-width: 8rem;
+    }
+
+    .meta-stat-label {
+      font-size: .7rem;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+    }
+
+    .meta-stat-value {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Notes box ────────────────────────────────────────────── */
+    .note-box {
+      margin-top: 1.25rem;
+      padding: .9rem 1.1rem;
+      background: var(--accent-subtle);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      font-size: .88rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+    }
+
+    /* ── Exercise cards ───────────────────────────────────────── */
+    .exercise-list {
+      display: flex;
+      flex-direction: column;
+      gap: .75rem;
+      margin-top: 1.25rem;
+    }
+
+    .exercise-card {
+      background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: .9rem 1.2rem;
+      padding: 1.1rem 1.25rem;
+      display: grid;
+      grid-template-columns: 2rem 1fr auto;
+      gap: .75rem;
+      align-items: start;
     }
-    .ex-name  { font-weight: 600; }
-    .ex-meta  { font-size: .82rem; color: var(--text-muted); margin-top: .15rem; }
-    .ex-badge {
-      font-size: .78rem; font-weight: 700;
-      background: var(--accent-dim);
-      color: var(--accent);
-      padding: .25rem .6rem;
-      border-radius: 20px;
+
+    .ex-num {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .75rem;
+      font-weight: 700;
+      color: var(--text-hint);
+      flex-shrink: 0;
+      margin-top: .1rem;
     }
-    .plan-meta {
-      display: flex; gap: 1.5rem; margin-top: 1rem;
-      font-size: .9rem; color: var(--text-muted);
+
+    .ex-body { min-width: 0; }
+
+    .ex-name {
+      font-weight: 600;
+      font-size: .95rem;
+      color: var(--text);
+      margin-bottom: .25rem;
     }
-    .plan-meta strong { color: var(--text); }
-    .note-box {
-      margin-top: 1.2rem;
-      padding: .8rem 1rem;
-      background: var(--surface-2);
-      border-left: 3px solid var(--accent);
-      border-radius: 0 var(--radius) var(--radius) 0;
-      font-size: .9rem;
+
+    .ex-description {
+      font-size: .82rem;
       color: var(--text-muted);
+      line-height: 1.55;
+      margin-bottom: .6rem;
+    }
+
+    .ex-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+    }
+
+    .ex-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .2rem .6rem;
+      border-radius: var(--radius-full);
+      font-size: .75rem;
+      font-weight: 600;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-md);
+      color: var(--text-muted);
+    }
+
+    .ex-chip.accent {
+      background: var(--accent-subtle);
+      border-color: var(--accent-subtle-2);
+      color: var(--accent);
+    }
+
+    /* ── Section heading ──────────────────────────────────────── */
+    .section-heading {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-top: 2rem;
+      margin-bottom: 0;
+    }
+
+    /* ── Footer ───────────────────────────────────────────────── */
+    .page-footer {
+      padding: 2rem 0 1rem;
+      display: flex;
+      gap: .75rem;
     }
   </style>
 </head>
 <body>
+<div class="app-shell">
+
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
+    </div>
+    <div class="step-dots" aria-label="Step 5 of 5">
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot active"></div>
+    </div>
+    <div class="topbar-right">
+      <span class="step-label">Step 5 of 5</span>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
+    </div>
+  </header>
+
   <div class="page">
     <nav class="nav">
-      <span>Geuse</span><span class="sep">›</span><span class="active">Your Plan</span>
+      <span>Geuse</span><span class="nav-sep">›</span><span class="nav-active">Your Plan</span>
     </nav>
 
     <h1>Your Rehabilitation Plan</h1>
-    <p class="muted mt-1">Generated based on your profile and today's check-in.</p>
+    <p class="text-muted mt-2">Generated from your assessment and check-in. Updated each session.</p>
 
-    <div id="planContainer" class="mt-3">
-      <p class="muted">Loading plan…</p>
+    <div id="planContainer">
+      <div class="loading-row">
+        <div class="spinner"></div>
+        Generating your plan…
+      </div>
     </div>
 
-    <div class="flex gap-2 mt-4">
-      <button class="btn btn-primary" id="btnSession">Start Today's Session</button>
-      <button class="btn btn-ghost"   onclick="api.navigate('self_report')">Back</button>
+    <div class="page-footer">
+      <button class="btn btn-primary" id="btnSession" disabled>Start Today's Session</button>
+      <button class="btn btn-ghost" onclick="api.navigate('self_report')">Back</button>
     </div>
   </div>
 
-  <script src="../js/bridge.js"></script>
-  <script>
-    (async () => {
-      const plan = await api.getPlan();
-      const container = document.getElementById("planContainer");
+</div><!-- /.app-shell -->
 
-      if (!plan || !plan.exercises || plan.exercises.length === 0) {
-        container.innerHTML = "<p class='muted'>No plan available yet. Complete the assessment first.</p>";
+<script>
+  /* ── Theme toggle ─────────────────────────────────────────────── */
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    html.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+    const isDark = theme === "dark";
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+<script src="../js/bridge.js"></script>
+<script>
+  const container = document.getElementById("planContainer");
+  const btnSession = document.getElementById("btnSession");
+
+  const HAND_LABELS = { right: "Right hand", left: "Left hand", both: "Both hands" };
+
+  function renderPlan(plan, profile) {
+    const exercises = plan.exercises || [];
+
+    if (exercises.length === 0) {
+      container.innerHTML = `<p class="text-muted" style="margin-top:1.5rem;">
+        No exercises generated. Complete your profile and assessment first.</p>`;
+      return;
+    }
+
+    // ── Meta stats ──────────────────────────────────────────────
+    const condition    = profile.condition || "—";
+    const affectedHand = HAND_LABELS[profile.affected_hand] || profile.affected_hand || "—";
+    const sessionsWk   = plan.sessions_per_week ?? "—";
+
+    const metaHTML = `
+      <div class="plan-meta">
+        <div class="meta-stat">
+          <span class="meta-stat-label">Condition</span>
+          <span class="meta-stat-value">${condition}</span>
+        </div>
+        <div class="meta-stat">
+          <span class="meta-stat-label">Affected hand</span>
+          <span class="meta-stat-value">${affectedHand}</span>
+        </div>
+        <div class="meta-stat">
+          <span class="meta-stat-label">Sessions / week</span>
+          <span class="meta-stat-value">${sessionsWk}</span>
+        </div>
+      </div>`;
+
+    // ── Notes ────────────────────────────────────────────────────
+    const notesHTML = plan.notes
+      ? `<div class="note-box">${plan.notes}</div>`
+      : "";
+
+    // ── Exercise cards ───────────────────────────────────────────
+    const cardsHTML = exercises.map((ex, i) => {
+      const holdChip = ex.hold_s
+        ? `<span class="ex-chip accent">Hold ${ex.hold_s}s</span>`
+        : "";
+      return `
+        <div class="exercise-card">
+          <div class="ex-num">${i + 1}</div>
+          <div class="ex-body">
+            <div class="ex-name">${ex.name}</div>
+            ${ex.description ? `<p class="ex-description">${ex.description}</p>` : ""}
+            <div class="ex-chips">
+              <span class="ex-chip">${ex.sets} sets</span>
+              <span class="ex-chip">${ex.reps} reps</span>
+              <span class="ex-chip">${ex.rest_s}s rest</span>
+              ${holdChip}
+            </div>
+          </div>
+          <span class="badge badge-neutral" style="flex-shrink:0;">${ex.sets * ex.reps} total</span>
+        </div>`;
+    }).join("");
+
+    container.innerHTML = `
+      ${metaHTML}
+      ${notesHTML}
+      <p class="section-heading">Exercises</p>
+      <div class="exercise-list">${cardsHTML}</div>`;
+
+    btnSession.disabled = false;
+  }
+
+  (async () => {
+    try {
+      // Generate (or re-generate) the plan from the latest assessment + profile
+      const genResult = await api.generateAndSavePlan();
+
+      // Also fetch the user profile for condition + affected hand display
+      const profileResult = await api.getProfile();
+      const profile = profileResult.profile || {};
+
+      if (!genResult.ok) {
+        container.innerHTML = `<p class="text-muted" style="margin-top:1.5rem;">
+          Could not generate plan: ${genResult.error || "unknown error"}</p>`;
         return;
       }
 
-      const items = plan.exercises.map((ex) => `
-        <div class="exercise-item">
-          <div>
-            <div class="ex-name">${ex.name}</div>
-            <div class="ex-meta">${ex.sets} sets × ${ex.reps} reps · ${ex.rest_s}s rest</div>
-          </div>
-          <span class="ex-badge">${ex.sets * ex.reps} total</span>
-        </div>
-      `).join("");
+      renderPlan(genResult.plan, profile);
+    } catch (err) {
+      container.innerHTML = `<p class="text-muted" style="margin-top:1.5rem;">
+        Something went wrong loading the plan.</p>`;
+    }
+  })();
 
-      container.innerHTML = `
-        <div class="plan-meta">
-          <div><strong>${plan.sessions_per_week}</strong> sessions / week</div>
-        </div>
-        ${plan.notes ? `<div class="note-box">${plan.notes}</div>` : ""}
-        <div class="exercise-list">${items}</div>
-      `;
-
-      // Save the displayed plan
-      await api.savePlan(plan);
-    })();
-
-    document.getElementById("btnSession").addEventListener("click", () => {
-      api.navigate("session");
-    });
-  </script>
+  btnSession.addEventListener("click", () => api.navigate("session"));
+</script>
 </body>
 </html>

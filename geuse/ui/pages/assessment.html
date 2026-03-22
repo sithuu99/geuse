@@ -1,95 +1,892 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Geuse — Assessment</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
   <style>
-    .camera-box {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 16/9;
-      background: #111;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
+    /* ── Logo ─────────────────────────────────────────────────── */
+    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
+    .logo-text .s { color: var(--accent); }
+
+    /* ── Left panel ───────────────────────────────────────────── */
+    /* Global .panel already gives: flex-col, padding, border-right, overflow-y:auto, bg:var(--bg) */
+
+    /* ── Exercise stepper ─────────────────────────────────────── */
+    .ex-progress {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+      flex-shrink: 0;
+    }
+
+    .ex-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .4rem;
+      flex: 1;
+    }
+
+    .ex-step-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--border-md);
+      background: var(--surface);
       display: flex;
       align-items: center;
       justify-content: center;
+      font-size: .72rem;
+      font-weight: 700;
+      color: var(--text-hint);
+      transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
     }
-    .camera-placeholder { color: var(--text-muted); font-size: .9rem; }
-    .status-badge {
-      display: inline-flex; align-items: center; gap: .4rem;
-      padding: .3rem .8rem;
-      border-radius: 20px;
-      font-size: .82rem;
+
+    .ex-step.done .ex-step-dot {
+      background: var(--green-subtle);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .ex-step.active .ex-step-dot {
+      background: var(--accent-subtle);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .ex-step-label {
+      font-size: .7rem;
+      font-weight: 500;
+      color: var(--text-hint);
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .ex-step.active .ex-step-label { color: var(--accent); font-weight: 600; }
+    .ex-step.done  .ex-step-label  { color: var(--green); }
+
+    .ex-connector {
+      flex: 0 0 1.5rem;
+      height: 2px;
+      background: var(--border-md);
+      margin-top: 14px; /* align with dot centre */
+      transition: background 0.3s ease;
+    }
+
+    .ex-connector.done { background: var(--green); }
+
+    /* ── Section label ────────────────────────────────────────── */
+    .section-label {
+      font-size: .72rem;
       font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-hint);
     }
-    .status-badge.idle    { background: var(--surface-2); color: var(--text-muted); }
-    .status-badge.running { background: var(--accent-dim); color: var(--accent); }
-    .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: currentColor;
+
+    /* ── Closure value card ───────────────────────────────────── */
+    .closure-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.4rem;
+      margin-top: 1.5rem;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
     }
-    .running .dot { animation: pulse 1s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .closure-card.in-zone {
+      border-color: var(--green-subtle-2);
+      box-shadow: 0 0 0 1px var(--green-subtle-2), var(--shadow-sm);
+    }
+
+    .closure-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: .85rem;
+    }
+
+    .target-badge {
+      font-size: .72rem;
+      font-weight: 600;
+      color: var(--text-hint);
+      background: var(--surface-muted);
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-full);
+      padding: .15rem .65rem;
+    }
+
+    .closure-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: .75rem;
+    }
+
+    .closure-number {
+      font-family: var(--font-serif);
+      font-size: 3.4rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      transition: color 0.2s ease;
+    }
+
+    .closure-number.in-zone { color: var(--green); }
+
+    .closure-guidance {
+      font-size: .82rem;
+      color: var(--text-hint);
+      font-weight: 500;
+      line-height: 1.5;
+      max-width: 13ch;
+    }
+
+    /* ── Hold stats (inside closure card) ────────────────────── */
+    .hold-stats {
+      display: flex;
+      gap: 2rem;
+      padding-top: .9rem;
+      margin-top: .9rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .hold-stat-label {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin-bottom: .3rem;
+    }
+
+    .hold-live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      animation: hold-pulse 1s ease-in-out infinite;
+    }
+
+    .hold-live-dot.active { opacity: 1; }
+
+    @keyframes hold-pulse {
+      0%, 100% { opacity: 1; transform: scale(1);   }
+      50%       { opacity: .4; transform: scale(.7); }
+    }
+
+    .hold-stat-val {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      transition: color 0.2s ease;
+    }
+
+    .hold-stat-val.live { color: var(--green); }
+    .hold-stat-val.best { color: var(--accent); }
+
+    /* ── Attempt tracker ──────────────────────────────────────── */
+    .attempt-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+      margin-top: 1.1rem;
+    }
+
+    .attempt-dots {
+      display: flex;
+      gap: .4rem;
+    }
+
+    .attempt-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--border-md);
+      background: transparent;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .attempt-dot.done { background: var(--accent); border-color: var(--accent); }
+
+    .attempt-counter {
+      font-size: .8rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* ── Record button ────────────────────────────────────────── */
+    .record-btn-wrap { margin-top: 1.25rem; }
+
+    /* ── Pain check ───────────────────────────────────────────── */
+    .pain-check {
+      display: none;
+      flex-direction: column;
+      gap: .9rem;
+      margin-top: 1.5rem;
+    }
+
+    .pain-check.visible { display: flex; }
+
+    .pain-check-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.4rem;
+    }
+
+    .pain-number-row {
+      display: flex;
+      align-items: baseline;
+      gap: .65rem;
+      margin: .65rem 0 .75rem;
+    }
+
+    .pain-big {
+      font-family: var(--font-serif);
+      font-size: 2.6rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--green);
+      transition: color 0.15s ease;
+    }
+
+    .pain-big.level-mid  { color: var(--warning); }
+    .pain-big.level-high { color: var(--danger);  }
+
+    .pain-descriptor { font-size: .82rem; color: var(--text-hint); font-weight: 500; }
+
+    .slider-end-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: .75rem;
+      color: var(--text-hint);
+      font-weight: 500;
+      margin-top: .4rem;
+    }
+
+    /* ── Recording section toggle ─────────────────────────────── */
+    .recording-section { display: contents; }
+    .recording-section.hidden > * { display: none; }
+
+    /* ── Right panel: camera ──────────────────────────────────── */
+    .camera-container {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+    }
+
+    #cameraFeed {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    #cameraFeed.visible { opacity: 1; }
+
+    .cam-init {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: .9rem;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .cam-init.hidden { opacity: 0; }
+
+    .cam-init p { font-size: .82rem; color: var(--text-hint); text-align: center; }
+
+    .spinner {
+      width: 28px;
+      height: 28px;
+      border: 2px solid var(--border-md);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      transition: none;
+      animation: spin 0.85s linear infinite;
+    }
+
+    .camera-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: .75rem;
+      flex-shrink: 0;
+      margin-top: .9rem;
+    }
+
+    .camera-hint {
+      font-size: .75rem;
+      color: var(--text-hint);
+      font-style: italic;
+      text-align: right;
+      flex-shrink: 0;
+      max-width: 22ch;
+      line-height: 1.4;
+    }
   </style>
 </head>
 <body>
-  <div class="page">
-    <nav class="nav">
-      <span>Geuse</span><span class="sep">›</span>
-      <a href="#" onclick="api.navigate('self_report')">Check-In</a>
-      <span class="sep">›</span><span class="active">Assessment</span>
-    </nav>
+<div class="app-shell">
 
-    <div class="flex items-center justify-between">
-      <h1>Range-of-Motion Assessment</h1>
-      <span class="status-badge idle" id="badge">
-        <span class="dot"></span> Idle
-      </span>
+  <!-- ── Topbar ─────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div>
+      <span class="logo-text">geu<span class="s">s</span>e</span>
     </div>
-    <p class="muted mt-1">
-      Position your hand in front of the camera and follow the on-screen prompts.
-      We will measure your current range of motion.
-    </p>
-
-    <div class="camera-box mt-3">
-      <p class="camera-placeholder" id="camMsg">Camera feed will appear here once started.</p>
+    <div class="step-dots" aria-label="Step 4 of 5">
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot active"></div>
+      <div class="step-dot"></div>
     </div>
-
-    <div class="flex gap-2 mt-3">
-      <button class="btn btn-primary" id="btnStart">Start Camera</button>
-      <button class="btn btn-ghost"   id="btnStop" disabled>Stop & Analyse</button>
-      <button class="btn btn-ghost"   onclick="api.navigate('self_report')">Back</button>
+    <div class="topbar-right">
+      <span class="step-label">Step 4 of 5</span>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
     </div>
-  </div>
+  </header>
 
-  <script src="../js/bridge.js"></script>
-  <script>
-    const btnStart = document.getElementById("btnStart");
-    const btnStop  = document.getElementById("btnStop");
-    const badge    = document.getElementById("badge");
-    const camMsg   = document.getElementById("camMsg");
+  <!-- ── Split layout ───────────────────────────────────────────── -->
+  <div class="split-layout">
 
-    btnStart.addEventListener("click", async () => {
-      btnStart.disabled = true;
-      await api.startAssessment();
-      badge.className    = "status-badge running";
-      badge.innerHTML    = '<span class="dot"></span> Recording…';
-      camMsg.textContent = "Camera active — move your hand through its full range.";
-      btnStop.disabled   = false;
+    <!-- ── Left panel ─────────────────────────────────────────── -->
+    <aside class="panel">
+
+      <nav class="nav">
+        <span>Geuse</span>
+        <span class="nav-sep">›</span>
+        <span class="nav-link" onclick="api.navigate('self_report')">Check-In</span>
+        <span class="nav-sep">›</span>
+        <span class="nav-active">Assessment</span>
+      </nav>
+
+      <!-- Exercise stepper — rendered by JS -->
+      <div class="ex-progress" id="exProgress"></div>
+
+      <!-- Exercise heading + instructions -->
+      <h1 id="exName" style="margin-bottom: .5rem;"></h1>
+      <p id="exInstruction" style="font-size:.92rem;color:var(--text-muted);line-height:1.7;margin-bottom:.25rem;max-width:none;"></p>
+      <p id="exDetail"      style="font-size:.82rem;color:var(--text-hint);line-height:1.6;margin-bottom:0;max-width:none;"></p>
+
+      <!-- ── Recording phase ─────────────────────────────────── -->
+      <div class="recording-section" id="recordingSection">
+
+        <!-- Live closure card -->
+        <div class="closure-card" id="closureCard">
+          <div class="closure-card-header">
+            <span class="section-label">Live closure</span>
+            <span class="target-badge" id="targetBadge"></span>
+          </div>
+          <div class="closure-value-row">
+            <span class="closure-number" id="closureNumber">—</span>
+            <span class="closure-guidance" id="closureGuidance">Waiting for hand…</span>
+          </div>
+
+          <div class="hold-stats">
+            <div>
+              <div class="hold-stat-label">
+                <span class="hold-live-dot" id="holdLiveDot"></span>
+                Current hold
+              </div>
+              <span class="hold-stat-val" id="currentHoldVal">0.0s</span>
+            </div>
+            <div>
+              <div class="hold-stat-label">Best hold</div>
+              <span class="hold-stat-val best" id="bestHoldVal">0.0s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attempt tracker -->
+        <div class="attempt-row">
+          <div class="attempt-dots" id="attemptDots"></div>
+          <span class="attempt-counter" id="attemptCounter">Attempt 1 of 3</span>
+        </div>
+
+        <!-- Record button -->
+        <div class="record-btn-wrap">
+          <button class="btn btn-primary" id="btnRecord">Record Attempt</button>
+        </div>
+
+      </div><!-- /.recording-section -->
+
+      <!-- ── Pain check phase ────────────────────────────────── -->
+      <div class="pain-check" id="painCheck">
+
+        <div class="pain-check-card">
+          <p class="section-label">Pain after this exercise?</p>
+          <div class="pain-number-row">
+            <span class="pain-big" id="painBig">0</span>
+            <span class="pain-descriptor" id="painDesc">No pain</span>
+          </div>
+          <input type="range" id="painSlider" min="0" max="10" value="0" step="1" />
+          <div class="slider-end-labels">
+            <span>No pain</span>
+            <span>Severe</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="btnNext">Next Exercise</button>
+
+      </div><!-- /.pain-check -->
+
+    </aside><!-- /.panel -->
+
+    <!-- ── Right panel — camera ───────────────────────────────── -->
+    <main class="panel-main">
+
+      <div class="camera-container" id="cameraContainer">
+        <div class="cam-corner cam-corner-tl"></div>
+        <div class="cam-corner cam-corner-tr"></div>
+        <div class="cam-corner cam-corner-bl"></div>
+        <div class="cam-corner cam-corner-br"></div>
+        <div class="scan-line"></div>
+
+        <div class="cam-init" id="camInit">
+          <div class="spinner"></div>
+          <p id="camInitText">Starting camera…</p>
+        </div>
+
+        <img id="cameraFeed" alt="Live camera feed" />
+      </div>
+
+      <div class="camera-footer">
+        <div class="status-pill searching" id="statusPill">
+          <span class="status-pill-dot"></span>
+          <span id="statusText">Searching for hand…</span>
+        </div>
+        <span class="camera-hint" id="cameraHint">
+          Keep your hand centred in frame
+        </span>
+      </div>
+
+    </main>
+
+  </div><!-- /.split-layout -->
+</div><!-- /.app-shell -->
+
+
+<!-- ── Theme toggle ───────────────────────────────────────────── -->
+<script>
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    html.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+    const isDark = theme === "dark";
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+
+<!-- ── Assessment logic ────────────────────────────────────────── -->
+<script src="../js/bridge.js"></script>
+<script>
+  /* ── Exercise definitions ─────────────────────────────────────── */
+  const EXERCISES = [
+    {
+      id:          "open_palm",
+      name:        "Open Palm",
+      instruction: "Spread your hand as wide as you can, extending all fingers fully.",
+      detail:      "Keep your wrist still and your palm facing the camera.",
+      targetLabel: "Target ≤ 0.20",
+      isInZone:    (v) => v <= 0.25,
+      guidance:    (v) => v > 0.25 ? "Open your hand wider" : "In range — hold steady!",
+    },
+    {
+      id:          "mid_flexion",
+      name:        "Mid Flexion",
+      instruction: "Curl your fingers halfway — aim for a relaxed half-grip.",
+      detail:      "Your palm stays flat while your fingers bend to roughly 90°.",
+      targetLabel: "Target ≈ 0.50",
+      isInZone:    (v) => v >= 0.35 && v <= 0.65,
+      guidance:    (v) => v < 0.35 ? "Curl your fingers more" : v > 0.65 ? "Open your hand a little" : "In range — hold steady!",
+    },
+    {
+      id:          "full_fist",
+      name:        "Full Fist",
+      instruction: "Close your hand into the tightest fist you can comfortably make.",
+      detail:      "Bring your fingertips toward your palm without straining.",
+      targetLabel: "Target ≥ 0.80",
+      isInZone:    (v) => v >= 0.75,
+      guidance:    (v) => v < 0.75 ? "Close your fist more" : "In range — hold steady!",
+    },
+  ];
+
+  const PAIN_LABELS = [
+    "No pain", "Very mild", "Mild", "Noticeable",
+    "Moderate", "Uncomfortable", "Distressing",
+    "Severe", "Very severe", "Intense", "Unbearable",
+  ];
+
+  /* ── State ────────────────────────────────────────────────────── */
+  let exIdx          = 0;          // current exercise index (0–2)
+  let phase          = "recording"; // "recording" | "pain_check"
+  let attemptsDone   = 0;          // recorded attempts for current exercise (0–3)
+  let recordedAttempts = [];       // [{closure, hold_s}, …]
+  const allResults   = [];         // one entry per exercise
+
+  // Hold detection
+  let isHolding   = false;
+  let holdStart   = null;
+  let holdSeconds = 0;
+  let bestHold    = 0;             // highest hold achieved this exercise; never resets mid-exercise
+  let lostFrames  = 0;
+  const GRACE_FRAMES = 8;          // ~264 ms before resetting current hold
+
+  // Camera
+  let polling        = false;
+  let currentClosure = null;
+
+  /* ── DOM refs ─────────────────────────────────────────────────── */
+  const elExProgress    = document.getElementById("exProgress");
+  const elExName        = document.getElementById("exName");
+  const elExInstruction = document.getElementById("exInstruction");
+  const elExDetail      = document.getElementById("exDetail");
+
+  const elRecording     = document.getElementById("recordingSection");
+  const elClosureCard   = document.getElementById("closureCard");
+  const elTargetBadge   = document.getElementById("targetBadge");
+  const elClosureNum    = document.getElementById("closureNumber");
+  const elClosureGuide  = document.getElementById("closureGuidance");
+  const elCurrentHoldVal = document.getElementById("currentHoldVal");
+  const elBestHoldVal    = document.getElementById("bestHoldVal");
+  const elHoldLiveDot    = document.getElementById("holdLiveDot");
+  const elAttemptDots   = document.getElementById("attemptDots");
+  const elAttemptCount  = document.getElementById("attemptCounter");
+  const btnRecord       = document.getElementById("btnRecord");
+
+  const elPainCheck     = document.getElementById("painCheck");
+  const elPainBig       = document.getElementById("painBig");
+  const elPainDesc      = document.getElementById("painDesc");
+  const elPainSlider    = document.getElementById("painSlider");
+  const btnNext         = document.getElementById("btnNext");
+
+  const cameraFeed      = document.getElementById("cameraFeed");
+  const cameraContainer = document.getElementById("cameraContainer");
+  const camInit         = document.getElementById("camInit");
+  const camInitText     = document.getElementById("camInitText");
+  const statusPill      = document.getElementById("statusPill");
+  const statusText      = document.getElementById("statusText");
+  const cameraHint      = document.getElementById("cameraHint");
+
+  /* ── Render exercise stepper ──────────────────────────────────── */
+  function renderStepper() {
+    elExProgress.innerHTML = EXERCISES.map((ex, i) => {
+      const stateClass = i < exIdx ? "done" : i === exIdx ? "active" : "";
+      const dotContent = i < exIdx
+        ? `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+             <polyline points="1.5,6 4.5,9 10.5,3" stroke="currentColor" stroke-width="1.8"
+               stroke-linecap="round" stroke-linejoin="round"/>
+           </svg>`
+        : i + 1;
+      const connector = i < EXERCISES.length - 1
+        ? `<div class="ex-connector ${i < exIdx ? 'done' : ''}"></div>`
+        : "";
+      return `
+        <div class="ex-step ${stateClass}">
+          <div class="ex-step-dot">${dotContent}</div>
+          <span class="ex-step-label">${ex.name}</span>
+        </div>
+        ${connector}
+      `;
+    }).join("");
+  }
+
+  /* ── Render attempt dots ──────────────────────────────────────── */
+  function renderAttemptDots() {
+    elAttemptDots.innerHTML = [0, 1, 2].map((i) =>
+      `<div class="attempt-dot ${i < attemptsDone ? 'done' : ''}"></div>`
+    ).join("");
+    elAttemptCount.textContent = `Attempt ${Math.min(attemptsDone + 1, 3)} of 3`;
+  }
+
+  /* ── Switch to an exercise ────────────────────────────────────── */
+  function loadExercise(idx) {
+    exIdx          = idx;
+    phase          = "recording";
+    attemptsDone   = 0;
+    recordedAttempts = [];
+    currentClosure = null;
+
+    // Reset hold state
+    isHolding   = false;
+    holdStart   = null;
+    holdSeconds = 0;
+    bestHold    = 0;
+    lostFrames  = 0;
+
+    const ex = EXERCISES[idx];
+    elExName.textContent        = ex.name;
+    elExInstruction.textContent = ex.instruction;
+    elExDetail.textContent      = ex.detail;
+    elTargetBadge.textContent   = ex.targetLabel;
+
+    // Pain slider reset
+    elPainSlider.value = 0;
+    updatePainDisplay(0);
+    btnNext.textContent = idx === EXERCISES.length - 1 ? "Finish Assessment" : "Next Exercise";
+
+    renderStepper();
+    renderAttemptDots();
+    showRecordingPhase();
+
+    // Reset closure + hold display
+    elClosureNum.textContent = "—";
+    elClosureNum.classList.remove("in-zone");
+    elClosureCard.classList.remove("in-zone");
+    elClosureGuide.textContent = "Waiting for hand…";
+    elCurrentHoldVal.textContent = "0.0s";
+    elCurrentHoldVal.classList.remove("live");
+    elBestHoldVal.textContent = "0.0s";
+    elHoldLiveDot.classList.remove("active");
+  }
+
+  /* ── Phase toggling ───────────────────────────────────────────── */
+  function showRecordingPhase() {
+    elRecording.classList.remove("hidden");
+    elPainCheck.classList.remove("visible");
+  }
+
+  function showPainCheckPhase() {
+    elRecording.classList.add("hidden");
+    elPainCheck.classList.add("visible");
+  }
+
+  /* ── Closure display update ───────────────────────────────────── */
+  function updateClosureDisplay(closure) {
+    const ex = EXERCISES[exIdx];
+
+    if (closure === null || closure === undefined) {
+      elClosureNum.textContent = "—";
+      elClosureNum.classList.remove("in-zone");
+      elClosureCard.classList.remove("in-zone");
+      elClosureGuide.textContent = "No hand detected";
+      return;
+    }
+
+    const val      = parseFloat(closure);
+    const inZone   = ex.isInZone(val);
+
+    elClosureNum.textContent = val.toFixed(2);
+    elClosureNum.classList.toggle("in-zone", inZone);
+    elClosureCard.classList.toggle("in-zone", inZone);
+    elClosureGuide.textContent = ex.guidance(val);
+  }
+
+  /* ── Hold timer update (called each frame) ────────────────────── */
+  function updateHoldState(closure) {
+    const ex     = EXERCISES[exIdx];
+    const inZone = closure !== null && closure !== undefined && ex.isInZone(parseFloat(closure));
+
+    if (inZone) {
+      lostFrames = 0;
+      if (!isHolding) {
+        isHolding = true;
+        holdStart = Date.now();
+      }
+      holdSeconds = (Date.now() - holdStart) / 1000;
+      bestHold    = Math.max(bestHold, holdSeconds);
+
+      elCurrentHoldVal.textContent = holdSeconds.toFixed(1) + "s";
+      elCurrentHoldVal.classList.add("live");
+      elBestHoldVal.textContent = bestHold.toFixed(1) + "s";
+      elHoldLiveDot.classList.add("active");
+    } else {
+      lostFrames++;
+      if (lostFrames > GRACE_FRAMES) {
+        if (isHolding) {
+          isHolding   = false;
+          holdStart   = null;
+          holdSeconds = 0;
+        }
+        elCurrentHoldVal.textContent = "0.0s";
+        elCurrentHoldVal.classList.remove("live");
+        elHoldLiveDot.classList.remove("active");
+        // bestHold intentionally not reset — persists for the full exercise
+      }
+    }
+  }
+
+  /* ── Record attempt ───────────────────────────────────────────── */
+  btnRecord.addEventListener("click", () => {
+    recordedAttempts.push({
+      closure:  currentClosure !== null ? parseFloat(currentClosure).toFixed(2) : null,
+      hold_s:   parseFloat(holdSeconds.toFixed(1)),
+    });
+    attemptsDone++;
+
+    // Reset current hold for next attempt (bestHold persists)
+    isHolding   = false;
+    holdStart   = null;
+    holdSeconds = 0;
+    lostFrames  = 0;
+    elCurrentHoldVal.textContent = "0.0s";
+    elCurrentHoldVal.classList.remove("live");
+    elHoldLiveDot.classList.remove("active");
+
+    if (attemptsDone >= 3) {
+      renderAttemptDots();
+      showPainCheckPhase();
+    } else {
+      renderAttemptDots();
+    }
+  });
+
+  /* ── Pain check slider ────────────────────────────────────────── */
+  function updatePainDisplay(v) {
+    elPainBig.textContent  = v;
+    elPainDesc.textContent = PAIN_LABELS[v];
+    elPainBig.classList.remove("level-mid", "level-high");
+    if (v >= 7)      elPainBig.classList.add("level-high");
+    else if (v >= 4) elPainBig.classList.add("level-mid");
+  }
+
+  elPainSlider.addEventListener("input", () => updatePainDisplay(parseInt(elPainSlider.value, 10)));
+
+  /* ── Advance to next exercise / finish ───────────────────────── */
+  btnNext.addEventListener("click", async () => {
+    // Save result for this exercise
+    allResults.push({
+      exercise:   EXERCISES[exIdx].id,
+      attempts:   recordedAttempts,
+      pain_after: parseInt(elPainSlider.value, 10),
     });
 
-    btnStop.addEventListener("click", async () => {
-      btnStop.disabled = true;
-      await api.stopAssessment();
-      badge.className    = "status-badge idle";
-      badge.innerHTML    = '<span class="dot"></span> Done';
-      camMsg.textContent = "Assessment complete. Generating your plan…";
-      setTimeout(() => api.navigate("plan"), 1200);
-    });
-  </script>
+    if (exIdx < EXERCISES.length - 1) {
+      loadExercise(exIdx + 1);
+    } else {
+      // All done — submit and navigate
+      btnNext.disabled    = true;
+      btnNext.textContent = "Saving…";
+      polling = false;
+      try { await window.pywebview.api.stop_camera(); } catch (_) {}
+      await api.saveAssessmentResult({ exercises: allResults });
+      api.navigate("plan");
+    }
+  });
+
+  /* ── Camera: frame polling ────────────────────────────────────── */
+  function revealFeed() {
+    cameraFeed.classList.add("visible");
+    camInit.classList.add("hidden");
+  }
+
+  function handleFrame(result) {
+    if (!result || !result.ok) return;
+
+    // Update camera image
+    const jpeg = result.jpeg_b64 || result.frame;
+    if (jpeg) {
+      if (!cameraFeed.classList.contains("visible")) revealFeed();
+      cameraFeed.src = "data:image/jpeg;base64," + jpeg;
+    }
+
+    // Hand detection status pill
+    if (result.hand_detected) {
+      statusPill.className  = "status-pill active";
+      statusText.textContent = "Hand detected";
+      cameraHint.textContent = "Hold the position and click Record";
+    } else {
+      statusPill.className  = "status-pill searching";
+      statusText.textContent = "Searching for hand…";
+      cameraHint.textContent = "Keep your hand centred in frame";
+    }
+
+    // Only update closure if in recording phase
+    if (phase === "recording") {
+      const closure = result.hand_detected ? (result.raw_closure ?? result.learned_closure ?? null) : null;
+      currentClosure = closure;
+      updateClosureDisplay(closure);
+      updateHoldState(closure);
+    }
+  }
+
+  function schedulePoll() {
+    window.pywebview.api.get_frame()
+      .then(handleFrame)
+      .catch(() => {})
+      .finally(() => {
+        if (polling) setTimeout(schedulePoll, 33);
+      });
+  }
+
+  async function initCamera() {
+    camInitText.textContent = "Starting camera…";
+    try {
+      await window.pywebview.api.start_camera();
+    } catch (_) {
+      camInitText.textContent = "Camera not available";
+      statusPill.className    = "status-pill";
+      statusText.textContent  = "No camera found";
+      return;
+    }
+    camInitText.textContent = "Waiting for your hand…";
+    polling = true;
+    schedulePoll();
+  }
+
+  /* ── Boot ─────────────────────────────────────────────────────── */
+  loadExercise(0);
+
+  window.addEventListener("pywebviewready", initCamera, { once: true });
+  if (window.pywebview?.api) {
+    window.removeEventListener("pywebviewready", initCamera);
+    initCamera();
+  }
+</script>
 </body>
 </html>
