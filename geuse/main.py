@@ -1,6 +1,8 @@
 import os
 import sys
 from pathlib import Path
+
+os.environ["PYWEBVIEW_GUI"] = "edgechromium"
 import webview
 from app.api import Api
 from app.database import init_db, get_user
