@@ -86,6 +86,9 @@
   --accent:          #c4872a;
   --accent-subtle:   rgba(196, 135, 42, 0.10);
   --accent-subtle-2: rgba(196, 135, 42, 0.18);
+  --warm:            #b86c38;
+  --warm-dim:        rgba(184, 108, 56, 0.10);
+  --warm-border:     rgba(184, 108, 56, 0.22);
   --green:           #2a8f58;
   --green-subtle:    rgba(42, 143, 88, 0.10);
   --green-subtle-2:  rgba(42, 143, 88, 0.18);
@@ -136,12 +139,15 @@
   --border-md:       rgba(255, 245, 220, 0.12);
 
   --text:            #f5efe4;
-  --text-muted:      #9c9080;
-  --text-hint:       #5c5448;
+  --text-muted:      #b8a898;   /* was #9c9080 — lifted for 4.5:1 contrast on #0f0e0c */
+  --text-hint:       #7a6a5a;   /* was #5c5448 — lifted for ≥4:1 contrast on #0f0e0c  */
 
   --accent:          #e8c97a;
   --accent-subtle:   rgba(232, 201, 122, 0.10);
   --accent-subtle-2: rgba(232, 201, 122, 0.18);
+  --warm:            #d4906c;
+  --warm-dim:        rgba(212, 144, 108, 0.12);
+  --warm-border:     rgba(212, 144, 108, 0.24);
   --green:           #7ecfa0;
   --green-subtle:    rgba(126, 207, 160, 0.10);
   --green-subtle-2:  rgba(126, 207, 160, 0.18);
@@ -182,6 +188,10 @@ html {
   text-rendering: optimizeLegibility;
   height: 100vh;
   overflow: hidden;
+  /* GPU compositing — prevents WebView2 checkerboard on Windows */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 body {
@@ -191,6 +201,10 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   line-height: 1.6;
+  /* Force own compositing layer to prevent partial-repaint artifacts */
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 /* Opt-in scrollable containers */
@@ -291,6 +305,12 @@ p { line-height: 1.65; max-width: 62ch; }
   background: var(--surface);
   flex-shrink: 0;
   z-index: 10;
+}
+
+/* Logo cell — flex so the JS-injected Demo badge sits beside the logo image */
+.topbar > div:first-child {
+  display: flex;
+  align-items: center;
 }
 
 .topbar-logo {
@@ -522,7 +542,7 @@ textarea {
     box-shadow 0.2s ease;
 }
 
-input::placeholder, textarea::placeholder { color: var(--text-hint); }
+input::placeholder, textarea::placeholder { color: var(--text-hint); opacity: 1; }
 
 input:focus, select:focus, textarea:focus {
   border-color: var(--accent);

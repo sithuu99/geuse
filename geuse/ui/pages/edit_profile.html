@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Geuse — Profile</title>
+  <title>Geuse — Edit Profile</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
   <link rel="icon" type="image/png" href="../assets/favicon.png" />
@@ -23,6 +23,15 @@
     }
     .chip input { display: none; }
     .chip.selected { background: var(--accent-subtle); border-color: var(--accent); color: var(--accent); }
+    .success-msg {
+      display: none;
+      align-items: center;
+      gap: .5rem;
+      font-size: .875rem;
+      color: var(--green);
+      padding: .5rem 0;
+    }
+    .success-msg.visible { display: flex; }
   </style>
 </head>
 <body>
@@ -32,15 +41,8 @@
     <div>
       <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
-    <div class="step-dots" aria-label="Step 2 of 5">
-      <div class="step-dot"></div>
-      <div class="step-dot active"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
-    </div>
+    <div></div>
     <div class="topbar-right">
-      <span class="step-label">Step 2 of 5</span>
       <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
       <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
@@ -49,11 +51,11 @@
 
   <div class="page">
     <nav class="nav">
-      <span>Geuse</span><span class="sep">›</span><span class="active">Profile</span>
+      <span>Geuse</span><span class="sep">›</span><span class="active">Edit Profile</span>
     </nav>
 
-    <h1>Your Profile</h1>
-    <p class="muted mt-1">Tell us a little about yourself so we can tailor your programme.</p>
+    <h1>Edit Profile</h1>
+    <p class="muted mt-1">Update your rehabilitation profile details.</p>
 
     <form id="profileForm" class="mt-4">
       <div class="card">
@@ -63,17 +65,17 @@
         </div>
 
         <div class="field">
-          <label for="age">Age</label>
-          <input type="number" id="age" min="5" max="120" placeholder="e.g. 42" required />
-        </div>
-
-        <div class="field">
           <label for="affected_hand">Affected Hand</label>
           <select id="affected_hand">
             <option value="right">Right</option>
             <option value="left">Left</option>
             <option value="both">Both</option>
           </select>
+        </div>
+
+        <div class="field">
+          <label for="condition">Condition / Injury (optional)</label>
+          <input type="text" id="condition" placeholder="e.g. post-surgery, arthritis, fracture…" />
         </div>
 
         <div class="field">
@@ -90,16 +92,15 @@
             </label>
           </div>
         </div>
-
-        <div class="field">
-          <label for="condition">Condition / Injury (optional)</label>
-          <input type="text" id="condition" placeholder="e.g. post-surgery, arthritis, fracture…" />
-        </div>
       </div>
 
-      <div class="flex gap-2 mt-3">
-        <button type="submit" class="btn btn-primary">Save & Continue</button>
-        <button type="button" class="btn btn-ghost" onclick="api.navigate('welcome')">Back</button>
+      <div class="flex gap-2 mt-3" style="align-items:center;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-ghost" id="btnBack">Back</button>
+        <span class="success-msg" id="successMsg">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Profile saved.
+        </span>
       </div>
     </form>
   </div>
@@ -107,7 +108,6 @@
 </div><!-- /.app-shell -->
 
 <script>
-  /* ── Theme toggle ─────────────────────────────────────────────── */
   const html        = document.documentElement;
   const themeToggle = document.getElementById("themeToggle");
 
@@ -151,7 +151,6 @@
 
 <script src="../js/bridge.js"></script>
 <script>
-  // Chip toggle
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", (e) => {
       e.preventDefault();
@@ -160,12 +159,15 @@
     });
   });
 
-  // Pre-fill if profile exists
+  document.getElementById("btnBack").addEventListener("click", () => {
+    const referrer = localStorage.getItem("geuse-profile-referrer") || "dashboard";
+    api.navigate(referrer);
+  });
+
   (async () => {
-    const p = await api.getProfile();
-    if (!p) return;
+    const res = await api.getProfile();
+    const p = res?.profile || {};
     if (p.name)          document.getElementById("name").value = p.name;
-    if (p.age)           document.getElementById("age").value  = p.age;
     if (p.affected_hand) document.getElementById("affected_hand").value = p.affected_hand;
     if (p.condition)     document.getElementById("condition").value = p.condition;
     (p.goals || []).forEach((g) => {
@@ -177,14 +179,21 @@
   document.getElementById("profileForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const goals = [...document.querySelectorAll("#goals input:checked")].map((i) => i.value);
+
+    const res = await api.getProfile();
+    const existing = res?.profile || {};
+
     await api.saveProfile({
       name:          document.getElementById("name").value.trim(),
-      age:           parseInt(document.getElementById("age").value),
+      age:           existing.age ?? null,
       affected_hand: document.getElementById("affected_hand").value,
       goals,
       condition:     document.getElementById("condition").value.trim(),
     });
-    api.navigate("self_report");
+
+    const msg = document.getElementById("successMsg");
+    msg.classList.add("visible");
+    setTimeout(() => msg.classList.remove("visible"), 3000);
   });
 
   /* ── Demo badge ─────────────────────────────────────────────── */

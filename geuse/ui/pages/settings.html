@@ -6,10 +6,8 @@
   <title>Geuse — Settings</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
-
     .page { height: 100%; overflow-y: auto; }
 
     /* ── Content wrapper ──────────────────────────────────────── */
@@ -225,7 +223,7 @@
 
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
     <div style="font-size:.82rem;font-weight:600;color:var(--text-hint);">Settings</div>
     <div class="topbar-right">
@@ -275,6 +273,14 @@
             <div>
               <label class="field-label" for="settCondition">Condition / injury</label>
               <input type="text" id="settCondition" placeholder="e.g. post-surgery, arthritis…" />
+            </div>
+            <div>
+              <label class="field-label">Rehabilitation goals</label>
+              <div class="chip-group" id="settGoals">
+                <label class="chip" data-value="grip_strength"><input type="checkbox" value="grip_strength" /> Grip strength</label>
+                <label class="chip" data-value="rom"><input type="checkbox" value="rom" /> Range of motion</label>
+                <label class="chip" data-value="dexterity"><input type="checkbox" value="dexterity" /> Dexterity</label>
+              </div>
             </div>
           </div>
           <div class="form-row-footer">
@@ -415,8 +421,21 @@
       document.getElementById("settName").value      = currentProfile.name          || "";
       document.getElementById("settHand").value      = currentProfile.affected_hand || "right";
       document.getElementById("settCondition").value = currentProfile.condition     || "";
+      document.querySelectorAll("#settGoals .chip").forEach(chip => chip.classList.remove("selected"));
+      (currentProfile.goals || []).forEach(g => {
+        const chip = document.querySelector(`#settGoals .chip[data-value="${g}"]`);
+        if (chip) { chip.classList.add("selected"); chip.querySelector("input").checked = true; }
+      });
     } catch (_) { /* non-critical */ }
   }
+
+  document.querySelectorAll("#settGoals .chip").forEach(chip => {
+    chip.addEventListener("click", e => {
+      e.preventDefault();
+      chip.classList.toggle("selected");
+      chip.querySelector("input").checked = chip.classList.contains("selected");
+    });
+  });
 
   document.getElementById("btnSaveProfile").addEventListener("click", async () => {
     const btn      = document.getElementById("btnSaveProfile");
@@ -424,16 +443,18 @@
     btn.disabled   = true;
 
     try {
+      const goals = [...document.querySelectorAll("#settGoals input:checked")].map(i => i.value);
       await api.saveProfile({
         ...currentProfile,
         name:          document.getElementById("settName").value.trim(),
         affected_hand: document.getElementById("settHand").value,
         condition:     document.getElementById("settCondition").value.trim(),
+        goals,
       });
-      // Refresh local copy
       currentProfile.name          = document.getElementById("settName").value.trim();
       currentProfile.affected_hand = document.getElementById("settHand").value;
       currentProfile.condition     = document.getElementById("settCondition").value.trim();
+      currentProfile.goals         = goals;
 
       feedback.classList.add("visible");
       setTimeout(() => feedback.classList.remove("visible"), 2000);
@@ -465,16 +486,51 @@
     const btn = document.getElementById("btnConfirmClear");
     btn.disabled    = true;
     btn.textContent = "Clearing…";
+    console.log("[Geuse] reset: calling reset_app…");
     try {
-      await api.resetApp();
-      // reset_app navigates to welcome.html from Python side
-    } catch (_) {
-      api.navigate("welcome");
+      const res = await window.pywebview.api.reset_app();
+      console.log("[Geuse] reset: response:", JSON.stringify(res));
+    } catch (err) {
+      console.error("[Geuse] reset: error:", err);
     }
+    // Navigate from JS side — belt-and-braces in case the Python-side timer misfires
+    console.log("[Geuse] reset: navigating to welcome");
+    window.pywebview.api.navigate("welcome");
   });
 
   /* ── Boot ────────────────────────────────────────────────────── */
   loadProfile();
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

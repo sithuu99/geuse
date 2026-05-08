@@ -11,6 +11,7 @@ CameraStream.get_frame()          — returns FrameData (base64 JPEG + inference
 from __future__ import annotations
 
 import base64
+import time
 import threading
 from dataclasses import dataclass, field
 from typing import Optional
@@ -77,6 +78,8 @@ class CameraStream:
         self._latest: FrameData = _NO_HAND_FRAME
         self._lock = threading.Lock()
         self._model = None   # injected lazily when available
+        self._camera_index: int = 0
+        self._last_frame_time: float = 0.0
 
     # ------------------------------------------------------------------ #
     # Lifecycle
@@ -86,6 +89,7 @@ class CameraStream:
         if self._running:
             return
 
+        self._camera_index = camera_index
         self._cap = cv2.VideoCapture(camera_index)
         if not self._cap.isOpened():
             raise RuntimeError(f"Cannot open camera {camera_index}")
@@ -97,6 +101,7 @@ class CameraStream:
         except FileNotFoundError:
             self._model = None
 
+        self._last_frame_time = time.monotonic()
         self._running = True
         self._thread = threading.Thread(target=self._loop, daemon=True, name="camera-thread")
         self._thread.start()
@@ -111,8 +116,27 @@ class CameraStream:
             self._cap = None
         with self._lock:
             self._latest = _NO_HAND_FRAME
+            self._last_frame_time = 0.0
         if self._model:
             self._model.reset_buffers()
+
+    def get_cameras(self) -> list:
+        """Return available camera devices, probing indices 0–4."""
+        cameras = []
+        for i in range(5):
+            if i == self._camera_index and self._running:
+                cameras.append({"index": i, "label": f"Camera {i}"})
+            else:
+                cap = cv2.VideoCapture(i)
+                if cap.isOpened():
+                    cameras.append({"index": i, "label": f"Camera {i}"})
+                    cap.release()
+        return cameras
+
+    def switch_camera(self, new_index: int) -> None:
+        """Stop the current capture and restart with a different camera index."""
+        self.stop()
+        self.start(new_index)
 
     @property
     def is_running(self) -> bool:
@@ -126,6 +150,15 @@ class CameraStream:
         """Return the most recent processed frame. Thread-safe."""
         with self._lock:
             return self._latest
+
+    def get_camera_status(self) -> dict:
+        """Return camera status: running/stalled/stopped."""
+        if not self._running:
+            return {"running": False, "stalled": False, "stopped": True}
+        with self._lock:
+            last_time = self._last_frame_time
+        stalled = last_time > 0 and (time.monotonic() - last_time) > 3.0
+        return {"running": True, "stalled": stalled, "stopped": False}
 
     # ------------------------------------------------------------------ #
     # Background loop
@@ -148,6 +181,7 @@ class CameraStream:
 
             with self._lock:
                 self._latest = data
+                self._last_frame_time = time.monotonic()
 
         hands.close()
 

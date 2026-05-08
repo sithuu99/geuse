@@ -6,9 +6,8 @@
   <title>Geuse — How Are You Feeling?</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
     .page { height: 100%; overflow-y: auto; }
 
     /* ── Section spacing ──────────────────────────────────────── */
@@ -121,7 +120,7 @@
   <!-- ── Topbar ─────────────────────────────────────────────────── -->
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
     <div class="step-dots" aria-label="Step 3 of 5">
       <div class="step-dot"></div>
@@ -336,6 +335,37 @@
       btn.textContent = "Continue to Assessment";
     }
   });
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

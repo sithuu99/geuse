@@ -6,10 +6,8 @@
   <title>Geuse</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
-
     body { overflow: hidden; }
 
     /* ── Dashboard grid ───────────────────────────────────────── */
@@ -259,31 +257,29 @@
       line-height: 1.55;
     }
 
-    /* ── Sparkline ────────────────────────────────────────────── */
-    .sparkline-wrap {
+    /* ── Recovery Day ─────────────────────────────────────────── */
+    .recovery-row {
       display: flex;
-      align-items: flex-end;
-      gap: 5px;
-      height: 40px;
-      margin-top: .25rem;
+      align-items: baseline;
+      gap: .4rem;
     }
 
-    .spark-bar {
-      flex: 1;
-      border-radius: 3px 3px 0 0;
-      min-height: 3px;
-      transition: background-color 0.3s ease;
+    .recovery-num {
+      font-family: var(--font-serif);
+      font-size: 2.8rem;
+      font-weight: 700;
+      color: var(--warm);
+      line-height: 1;
     }
 
-    .spark-bar.low  { background: var(--green); }
-    .spark-bar.mid  { background: var(--warning); }
-    .spark-bar.high { background: var(--danger); }
+    .recovery-unit {
+      font-size: .85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
 
-    .sparkline-labels {
-      display: flex;
-      justify-content: space-between;
-      margin-top: .25rem;
-      font-size: .65rem;
+    .recovery-sub {
+      font-size: .78rem;
       color: var(--text-hint);
     }
 
@@ -350,6 +346,153 @@
       font-size: .88rem;
       color: var(--text-muted);
     }
+
+    /* ── Monthly Calendar ─────────────────────────────────────── */
+    .cal-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .6rem;
+    }
+
+    .cal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+    }
+
+    .cal-nav-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: .85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      line-height: 1;
+      font-family: var(--font-sans);
+      transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .cal-nav-btn:hover:not(:disabled) {
+      background: var(--surface-muted);
+      border-color: var(--border-md);
+      color: var(--text);
+    }
+
+    .cal-nav-btn:disabled {
+      opacity: 0.28;
+      cursor: default;
+    }
+
+    .cal-month-label {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text);
+      min-width: 7.5rem;
+      text-align: center;
+    }
+
+    .cal-summary {
+      font-size: .73rem;
+      color: var(--text-hint);
+      padding-top: .1rem;
+    }
+
+    .cal-weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    .cal-wd {
+      font-size: .58rem;
+      font-weight: 700;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      text-align: center;
+      padding-bottom: .2rem;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    .cal-day {
+      height: 28px;
+      border-radius: 4px;
+      background: var(--surface-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .67rem;
+      font-weight: 500;
+      color: var(--text-hint);
+      border: 1px solid transparent;
+      /* isolated transition to avoid global * transition breaking things */
+      transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    .cal-empty {
+      background: transparent;
+    }
+
+    .cal-future {
+      opacity: 0.35;
+    }
+
+    .cal-session {
+      background: var(--warm);
+      color: var(--bg);
+      font-weight: 700;
+      opacity: 1;
+    }
+
+    .cal-today {
+      border-color: var(--accent);
+    }
+
+    .cal-legend {
+      display: flex;
+      gap: 1.25rem;
+      padding-top: .5rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .cal-legend-item {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      font-size: .72rem;
+      color: var(--text-hint);
+    }
+
+    .cal-legend-sq {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .cal-sq-session { background: var(--warm); }
+    .cal-sq-rest    { background: var(--surface-muted); border: 1px solid var(--border-md); }
   </style>
 </head>
 <body>
@@ -357,11 +500,10 @@
 
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
     <div></div>
     <div class="topbar-right">
-      <button class="btn btn-ghost btn-sm" onclick="api.navigate('profile')">Profile</button>
       <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
       <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme"></button>
@@ -400,6 +542,39 @@
         </button>
       </div>
 
+      <!-- Monthly Calendar -->
+      <div class="cal-section" id="calSection" style="display:none;">
+        <div class="cal-header">
+          <p class="section-heading" style="margin-bottom:0;">Monthly Overview</p>
+          <div class="cal-nav">
+            <button class="cal-nav-btn" id="calPrevBtn" onclick="calNavigate(-1)" title="Previous month">&#8249;</button>
+            <span class="cal-month-label" id="calMonthLabel"></span>
+            <button class="cal-nav-btn" id="calNextBtn" onclick="calNavigate(1)" title="Next month">&#8250;</button>
+          </div>
+        </div>
+        <div class="cal-weekdays">
+          <span class="cal-wd">Mon</span>
+          <span class="cal-wd">Tue</span>
+          <span class="cal-wd">Wed</span>
+          <span class="cal-wd">Thu</span>
+          <span class="cal-wd">Fri</span>
+          <span class="cal-wd">Sat</span>
+          <span class="cal-wd">Sun</span>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+        <div class="cal-summary" id="calSummary"></div>
+        <div class="cal-legend">
+          <div class="cal-legend-item">
+            <div class="cal-legend-sq cal-sq-session"></div>
+            Session completed
+          </div>
+          <div class="cal-legend-item">
+            <div class="cal-legend-sq cal-sq-rest"></div>
+            Rest day
+          </div>
+        </div>
+      </div>
+
       <!-- Your plan -->
       <div>
         <p class="section-heading">Your Plan</p>
@@ -430,18 +605,14 @@
         <div class="last-session-meta" id="lastSessionMeta"></div>
       </div>
 
-      <!-- Pain trend -->
-      <div class="widget" id="painTrendWidget">
-        <div class="widget-label">Pain trend</div>
-        <div class="sparkline-wrap" id="sparkline">
-          <div style="font-size:.78rem;color:var(--text-hint);align-self:center;">
-            No check-in data yet
-          </div>
+      <!-- Recovery day -->
+      <div class="widget">
+        <div class="widget-label">Recovery</div>
+        <div class="recovery-row">
+          <span class="recovery-num" id="recoveryDayNum">—</span>
+          <span class="recovery-unit">days</span>
         </div>
-        <div class="sparkline-labels" id="sparklineLabels" style="display:none;">
-          <span>5 ago</span>
-          <span>Now</span>
-        </div>
+        <div class="recovery-sub">into your recovery</div>
       </div>
 
       <!-- Quick stats -->
@@ -552,21 +723,109 @@ function fmtDuration(seconds) {
   return m < 1 ? `${seconds}s` : `${m} min`;
 }
 
-/* ── Sparkline ────────────────────────────────────────────────── */
-function renderSparkline(painHistory) {
-  const sparkEl  = document.getElementById("sparkline");
-  const labelsEl = document.getElementById("sparklineLabels");
+/* ── Monthly calendar ─────────────────────────────────────────── */
+const MONTH_NAMES = [
+  "January","February","March","April","May","June",
+  "July","August","September","October","November","December",
+];
 
-  if (!painHistory || painHistory.length === 0) return;
+let calOffset   = 0;   // 0 = current month, -1 = previous month, etc.
+let calMonthMap = {};  // "YYYY-MM" -> monthly data object from getMonthlyHistory
 
-  const bars = painHistory.map(v => {
-    const h   = Math.max(8, Math.round((v / 10) * 100));
-    const cls = v <= 3 ? "low" : v <= 6 ? "mid" : "high";
-    return `<div class="spark-bar ${cls}" style="height:${h}%;" title="Pain: ${v}/10"></div>`;
-  }).join("");
+function calCurrentKey(offset) {
+  const now = new Date();
+  const d   = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
 
-  sparkEl.innerHTML  = bars;
-  labelsEl.style.display = "flex";
+function calNavigate(delta) {
+  const proposed = calOffset + delta;
+  if (proposed > 0) return;
+  if (delta < 0 && !calMonthMap[calCurrentKey(calOffset - 1)]) return;
+  calOffset = proposed;
+  refreshCalendar();
+}
+
+function refreshCalendar() {
+  const monthKey = calCurrentKey(calOffset);
+  const data     = calMonthMap[monthKey] || null;
+  const sessions = data?.sessions || [];
+
+  const now    = new Date();
+  const target = new Date(now.getFullYear(), now.getMonth() + calOffset, 1);
+
+  renderMonthCalendar(sessions, target.getFullYear(), target.getMonth());
+  renderCalSummary(data, target.getFullYear(), target.getMonth());
+
+  document.getElementById("calPrevBtn").disabled =
+    !calMonthMap[calCurrentKey(calOffset - 1)];
+  document.getElementById("calNextBtn").disabled = calOffset >= 0;
+}
+
+function renderMonthCalendar(sessions, year, month) {
+  const gridEl  = document.getElementById("calGrid");
+  const labelEl = document.getElementById("calMonthLabel");
+
+  const now      = new Date();
+  const isCurrentMonth = (year === now.getFullYear() && month === now.getMonth());
+  const todayStr = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("-");
+
+  const monthPfx = `${year}-${String(month + 1).padStart(2, "0")}`;
+  labelEl.textContent = `${MONTH_NAMES[month]} ${year}`;
+
+  const sessionDates = new Set();
+  for (const s of sessions) {
+    if (s.completed_at && (!s.status || s.status === "completed"))
+      sessionDates.add(s.completed_at.slice(0, 10));
+  }
+
+  const firstDay    = new Date(year, month, 1);
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startOffset = (firstDay.getDay() + 6) % 7;  // Mon-first
+
+  let html = "";
+  for (let i = 0; i < startOffset; i++) {
+    html += `<div class="cal-day cal-empty"></div>`;
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr    = `${monthPfx}-${String(d).padStart(2, "0")}`;
+    const hasSession = sessionDates.has(dateStr);
+    const isToday    = isCurrentMonth && dateStr === todayStr;
+    const isFuture   = dateStr > todayStr;
+
+    const cls = [
+      "cal-day",
+      hasSession ? "cal-session" : (isFuture ? "cal-future" : ""),
+      isToday    ? "cal-today"   : "",
+    ].filter(Boolean).join(" ");
+
+    html += `<div class="${cls}" title="${dateStr}">${d}</div>`;
+  }
+
+  gridEl.innerHTML = html;
+  document.getElementById("calSection").style.display = "flex";
+}
+
+function renderCalSummary(data, year, month) {
+  const el = document.getElementById("calSummary");
+  if (!data) { el.textContent = ""; return; }
+
+  const now         = new Date();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const isCurrentMonth = (year === now.getFullYear() && month === now.getMonth());
+  const daysElapsed = isCurrentMonth ? now.getDate() : daysInMonth;
+
+  const sessions  = data.sessions_count;
+  const restDays  = Math.max(0, daysElapsed - sessions);
+  const painStr   = data.avg_pain != null ? data.avg_pain : "—";
+  el.textContent  =
+    `${sessions} session${sessions !== 1 ? "s" : ""} completed · ` +
+    `${restDays} rest day${restDays !== 1 ? "s" : ""} · Avg pain: ${painStr}`;
 }
 
 /* ── Plan card list ───────────────────────────────────────────── */
@@ -602,10 +861,18 @@ function renderPlanList(exercises) {
 }
 
 /* ── Start card ───────────────────────────────────────────────── */
-function renderStartCard(exercises) {
+function renderStartCard(exercises, referral) {
   const title  = document.getElementById("startCardTitle");
   const meta   = document.getElementById("startCardMeta");
   const btn    = document.getElementById("btnStartSession");
+
+  if (referral) {
+    title.textContent = "Please see a physiotherapist";
+    meta.innerHTML = `<span class="start-card-pill" style="background:rgba(255,255,255,0.15);">Professional care recommended</span>`;
+    btn.textContent = "Reassess when ready";
+    btn.onclick = () => api.navigate("self_report");
+    return;
+  }
 
   if (!exercises || exercises.length === 0) {
     title.textContent = "No plan yet";
@@ -666,13 +933,16 @@ function renderLastSession(sessions) {
     (s.pain_after != null ? ` · Pain after: ${s.pain_after}/10` : "");
 }
 
+
 /* ── Boot ─────────────────────────────────────────────────────── */
 async function boot() {
   try {
-    const [profileRes, planRes, historyRes] = await Promise.all([
+    const [profileRes, planRes, historyRes, recoveryRes, monthlyRes] = await Promise.all([
       api.getProfile(),
       api.getPlan(),
       api.getSessionHistory(),
+      api.getRecoveryDay(),
+      api.getMonthlyHistory(),
     ]);
 
     // Greeting
@@ -683,17 +953,29 @@ async function boot() {
       : "Ready to train?";
 
     // Plan
-    const exercises = planRes.plan?.exercises || [];
-    renderStartCard(exercises);
+    const plan      = planRes.plan || {};
+    const exercises = plan.exercises || [];
+    renderStartCard(exercises, plan.referral_required);
     renderPlanList(exercises);
 
-    // History
+    // History widgets
     if (historyRes.ok) {
       renderStreak(historyRes.streak || 0);
       renderLastSession(historyRes.sessions || []);
-      renderSparkline(historyRes.pain_history || []);
       document.getElementById("totalSessions").textContent  = historyRes.total_sessions ?? "—";
       document.getElementById("totalExercises").textContent = historyRes.total_exercises ?? "—";
+    }
+
+    // Calendar (uses monthly history for multi-month navigation)
+    if (monthlyRes?.ok) {
+      calMonthMap = {};
+      for (const m of (monthlyRes.months || [])) calMonthMap[m.month_key] = m;
+    }
+    refreshCalendar();
+
+    // Recovery day counter
+    if (recoveryRes?.ok) {
+      document.getElementById("recoveryDayNum").textContent = recoveryRes.day;
     }
 
     document.getElementById("loadingView").style.display = "none";
@@ -709,6 +991,37 @@ if (window.pywebview?.api) {
 } else {
   window.addEventListener("pywebviewready", boot, { once: true });
 }
+
+/* ── Demo badge ─────────────────────────────────────────────── */
+(function () {
+  function attachDemoBadge() {
+    window.pywebview.api.is_demo_mode().then(function (res) {
+      if (res && res.ok && res.is_demo) {
+        var wrap = document.querySelector('.topbar > div');
+        if (!wrap) return;
+        var b = document.createElement('span');
+        b.className = 'badge badge-accent';
+        b.textContent = 'Demo';
+        b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+        wrap.appendChild(b);
+      }
+    }).catch(function () {});
+  }
+  window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+  if (window.pywebview && window.pywebview.api) {
+    window.removeEventListener('pywebviewready', attachDemoBadge);
+    attachDemoBadge();
+  }
+}());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

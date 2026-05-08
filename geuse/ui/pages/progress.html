@@ -6,10 +6,8 @@
   <title>Geuse — Progress</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
-
     .page { height: 100%; overflow-y: auto; }
 
     /* ── Content wrapper ─────────────────────────────────────── */
@@ -75,30 +73,6 @@
     }
 
     /* ── Chart section ───────────────────────────────────────── */
-    .chart-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.25rem 1.5rem;
-    }
-
-    .chart-canvas-wrap {
-      position: relative;
-      width: 100%;
-    }
-
-    #closureCanvas {
-      display: block;
-      width: 100%;
-    }
-
-    .chart-legend {
-      display: flex;
-      gap: 1.25rem;
-      flex-wrap: wrap;
-      margin-top: .85rem;
-    }
-
     .legend-item {
       display: flex;
       align-items: center;
@@ -115,13 +89,116 @@
       flex-shrink: 0;
     }
 
-    .chart-empty {
+    /* ── Assessment baseline ─────────────────────────────────────── */
+    .baseline-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .75rem;
+    }
+
+    @media (max-width: 520px) {
+      .baseline-grid { grid-template-columns: 1fr; }
+    }
+
+    .baseline-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.25rem;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 200px;
-      font-size: .88rem;
+      flex-direction: column;
+      gap: .3rem;
+    }
+
+    .baseline-card-label {
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
       color: var(--text-hint);
+    }
+
+    .baseline-card-sub {
+      font-size: .72rem;
+      color: var(--text-hint);
+    }
+
+    .baseline-card-rating {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: .1rem 0 .35rem;
+      /* color is set dynamically by JS based on quality */
+    }
+
+    .baseline-card-raw {
+      font-size: .71rem;
+      color: var(--text-hint);
+      margin-top: .25rem;
+    }
+
+    .baseline-bar-wrap {
+      height: 5px;
+      background: var(--border-md);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .baseline-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width 0.6s var(--ease-out);
+      width: 0%;
+    }
+
+    /* ── Session history table ───────────────────────────────────── */
+    .session-table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .session-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .84rem;
+    }
+
+    .session-table th {
+      text-align: left;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      padding: .85rem .9rem .7rem;
+      border-bottom: 1px solid var(--border-md);
+    }
+
+    .session-table th:last-child,
+    .session-table td:last-child { text-align: right; }
+
+    .session-table td {
+      padding: .72rem .9rem;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    .session-table tr:last-child td { border-bottom: none; }
+
+    .session-table td:first-child {
+      color: var(--text);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .table-empty {
+      text-align: center !important;
+      color: var(--text-hint) !important;
+      padding: 2.5rem 1rem !important;
+      font-size: .88rem;
     }
 
     /* ── Session history ─────────────────────────────────────── */
@@ -220,72 +297,159 @@
       padding: 1.25rem 1.5rem;
     }
 
-    .pain-bars {
-      display: flex;
-      align-items: flex-end;
-      gap: 4px;
-      height: 80px;
-      margin-top: .75rem;
+    /* ── Chart tooltip ───────────────────────────────────────── */
+    /* ── Insights section ────────────────────────────────────── */
+    .insights-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .75rem;
     }
 
-    .pain-bar-item {
-      flex: 1;
-      position: relative;
+    @media (max-width: 560px) {
+      .insights-grid { grid-template-columns: 1fr; }
+    }
+
+    .insight-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
       display: flex;
       flex-direction: column;
-      justify-content: flex-end;
-      cursor: default;
+      gap: .35rem;
     }
 
-    .pain-bar-fill {
-      border-radius: 3px 3px 0 0;
-      min-height: 3px;
-      transition: opacity 0.15s ease;
+    .insight-icon {
+      font-size: 1.1rem;
+      line-height: 1;
     }
 
-    .pain-bar-fill.low  { background: var(--green);   }
-    .pain-bar-fill.mid  { background: var(--warning);  }
-    .pain-bar-fill.high { background: var(--danger);   }
-
-    .pain-bar-item:hover .pain-bar-fill { opacity: 0.75; }
-
-    /* Tooltip */
-    .pain-bar-item:hover .pain-tooltip { opacity: 1; pointer-events: none; }
-
-    .pain-tooltip {
-      position: absolute;
-      bottom: calc(100% + 6px);
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--text);
-      color: var(--bg);
-      font-size: .68rem;
-      font-weight: 600;
-      padding: .25rem .5rem;
-      border-radius: var(--radius-xs);
-      white-space: nowrap;
-      opacity: 0;
-      transition: opacity 0.15s ease;
-      pointer-events: none;
-      z-index: 10;
+    .insight-text {
+      font-size: .88rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.45;
     }
 
-    .pain-tooltip::after {
-      content: '';
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border: 4px solid transparent;
-      border-top-color: var(--text);
+    .insight-sub {
+      font-size: .75rem;
+      color: var(--text-hint);
     }
 
-    .pain-trend-axis {
+    /* ── Monthly history ─────────────────────────────────────── */
+    .monthly-list {
       display: flex;
-      justify-content: space-between;
-      margin-top: .35rem;
+      flex-direction: column;
+      gap: .4rem;
+    }
+
+    .month-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .month-row-header {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto auto;
+      align-items: center;
+      gap: .75rem;
+      padding: .8rem 1.1rem;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.15s ease;
+    }
+
+    .month-row-header:hover { background: var(--surface-muted); }
+
+    .month-name {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .month-stat {
+      font-size: .75rem;
+      color: var(--text-hint);
+      white-space: nowrap;
+    }
+
+    .month-chevron {
       font-size: .65rem;
       color: var(--text-hint);
+      transition: transform 0.2s ease;
+      line-height: 1;
+    }
+
+    .month-row.expanded .month-chevron { transform: rotate(180deg); }
+
+    .month-detail {
+      display: none;
+      border-top: 1px solid var(--border-md);
+    }
+
+    .month-row.expanded .month-detail { display: block; }
+
+    /* ── Progression timeline ───────────────────────────────────── */
+    .prog-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .prog-timeline::before {
+      content: "";
+      position: absolute;
+      left: .9rem;
+      top: .6rem;
+      bottom: .6rem;
+      width: 2px;
+      background: var(--border-md);
+      border-radius: 1px;
+    }
+
+    .prog-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: .85rem;
+      padding: .6rem 0;
+      position: relative;
+    }
+
+    .prog-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--green);
+      border: 2px solid var(--surface);
+      outline: 2px solid var(--green);
+      flex-shrink: 0;
+      margin-top: .25rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .prog-entry-body {
+      display: flex;
+      flex-direction: column;
+      gap: .15rem;
+    }
+
+    .prog-entry-date {
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: var(--text-hint);
+      text-transform: uppercase;
+    }
+
+    .prog-entry-desc {
+      font-size: .84rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      line-height: 1.4;
     }
 
     /* ── Loading ─────────────────────────────────────────────── */
@@ -315,7 +479,7 @@
 
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
     <div style="font-size:.82rem;font-weight:600;color:var(--text-hint);">Progress</div>
     <div class="topbar-right">
@@ -361,57 +525,103 @@
         </div>
       </section>
 
-      <!-- §2 Closure Progress -->
+      <!-- §1b Health Flags -->
+      <section id="healthFlagsSection" style="display:none;">
+        <p class="section-title">Health Flags</p>
+        <div id="healthFlagsGrid" style="display:flex;flex-direction:column;gap:.5rem;"></div>
+      </section>
+
+      <!-- §2 Assessment Baseline -->
       <section>
-        <p class="section-title">Closure Progress</p>
-        <div class="chart-card">
-          <div class="chart-canvas-wrap" id="chartWrap">
-            <canvas id="closureCanvas"></canvas>
+        <p class="section-title">Assessment Baseline</p>
+        <div class="baseline-grid">
+          <div class="baseline-card">
+            <div class="baseline-card-label">Open Palm</div>
+            <div class="baseline-card-rating" id="blPalmRating">—</div>
+            <div class="baseline-bar-wrap">
+              <div class="baseline-bar-fill" id="blPalmBar"></div>
+            </div>
+            <div class="baseline-card-raw" id="blPalmRaw"></div>
+            <div class="baseline-card-sub" id="blPalmDate">Your starting point</div>
           </div>
-          <div class="chart-legend">
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#2a8f58;"></div>
-              Open Palm
+          <div class="baseline-card">
+            <div class="baseline-card-label">Mid Flexion</div>
+            <div class="baseline-card-rating" id="blMidRating">—</div>
+            <div class="baseline-bar-wrap">
+              <div class="baseline-bar-fill" id="blMidBar"></div>
             </div>
-            <div class="legend-item">
-              <div class="legend-dot" id="legendMidDot"></div>
-              Mid Flexion
+            <div class="baseline-card-raw" id="blMidRaw"></div>
+            <div class="baseline-card-sub" id="blMidDate">Your starting point</div>
+          </div>
+          <div class="baseline-card">
+            <div class="baseline-card-label">Full Fist</div>
+            <div class="baseline-card-rating" id="blFistRating">—</div>
+            <div class="baseline-bar-wrap">
+              <div class="baseline-bar-fill" id="blFistBar"></div>
             </div>
-            <div class="legend-item">
-              <div class="legend-dot" style="background:#7b68ee;"></div>
-              Full Fist
-            </div>
+            <div class="baseline-card-raw" id="blFistRaw"></div>
+            <div class="baseline-card-sub" id="blFistDate">Your starting point</div>
           </div>
         </div>
       </section>
 
-      <!-- §3 Session History -->
+      <!-- §3 Insights -->
+      <section id="insightsSection" style="display:none;">
+        <p class="section-title">Insights</p>
+        <div class="insights-grid" id="insightsGrid"></div>
+      </section>
+
+      <!-- §4 Session History -->
       <section>
         <p class="section-title">Session History</p>
-        <div class="session-list" id="sessionList">
-          <p class="text-muted text-sm">No sessions recorded yet.</p>
+        <div class="session-table-wrap">
+          <table class="session-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Exercises</th>
+                <th>Duration</th>
+                <th>Pain after</th>
+              </tr>
+            </thead>
+            <tbody id="sessionTableBody">
+              <tr><td colspan="4" class="table-empty">Complete your first session to see your progress here.</td></tr>
+            </tbody>
+          </table>
         </div>
       </section>
 
-      <!-- §4 Pain Trend -->
+      <!-- §5 Pain Trend -->
       <section>
         <p class="section-title">Pain Trend</p>
         <div class="pain-trend-wrap">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span class="text-hint text-xs" style="font-weight:600;letter-spacing:.06em;text-transform:uppercase;">
-              Last 30 check-ins
-            </span>
-            <div style="display:flex;gap:.75rem;">
-              <span class="legend-item"><div class="legend-dot" style="background:var(--green);"></div> 0–3</span>
-              <span class="legend-item"><div class="legend-dot" style="background:var(--warning);"></div> 4–6</span>
-              <span class="legend-item"><div class="legend-dot" style="background:var(--danger);"></div> 7–10</span>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem;">
+            <span class="text-hint text-xs" style="font-weight:600;letter-spacing:.06em;text-transform:uppercase;">Last 30 check-ins</span>
+            <div id="painCurrentDisplay" style="display:none;align-items:baseline;gap:.3rem;">
+              <span id="painCurrentNum" style="font-family:var(--font-serif);font-size:1.75rem;font-weight:700;line-height:1;"></span>
+              <span style="font-size:.8rem;color:var(--text-hint);font-weight:500;">/10 most recent</span>
             </div>
           </div>
-          <div class="pain-bars" id="painBars">
-            <div style="font-size:.82rem;color:var(--text-hint);margin:auto;">No check-in data yet.</div>
+          <div id="painEmpty" style="height:200px;display:flex;align-items:center;justify-content:center;font-size:.82rem;color:var(--text-hint);">No check-in data yet.</div>
+          <canvas id="painCanvas" style="display:none;width:100%;height:200px;"></canvas>
+          <div id="painLegend" style="display:none;margin-top:.65rem;gap:.75rem;">
+            <span class="legend-item"><div class="legend-dot" style="background:var(--green);"></div> 0–3</span>
+            <span class="legend-item"><div class="legend-dot" style="background:var(--warning);"></div> 4–6</span>
+            <span class="legend-item"><div class="legend-dot" style="background:var(--danger);"></div> 7–10</span>
           </div>
-          <div class="pain-trend-axis" id="painAxis"></div>
         </div>
+      </section>
+
+      <!-- §6 Monthly History -->
+      <section id="monthlyHistorySection" style="display:none;">
+        <p class="section-title">Monthly History</p>
+        <div class="monthly-list" id="monthlyHistoryList"></div>
+      </section>
+
+      <!-- §7 Plan Progression History -->
+      <section id="progressionHistorySection" style="display:none;">
+        <p class="section-title">Plan Progression History</p>
+        <div class="prog-timeline" id="progressionTimeline"></div>
       </section>
 
     </div>
@@ -455,8 +665,6 @@
     const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
     localStorage.setItem("geuse-theme", next);
     applyTheme(next);
-    // Redraw chart in new theme colours
-    if (window._chartData) drawClosureChart(window._chartData);
   });
 </script>
 
@@ -497,215 +705,581 @@ function painClass(v) {
   return v <= 3 ? "low" : v <= 6 ? "mid" : "high";
 }
 
-/* ── Closure chart (Canvas 2D) ───────────────────────────────── */
-function drawClosureChart(chartData) {
-  const canvas = document.getElementById("closureCanvas");
-  const wrap   = document.getElementById("chartWrap");
+/* ── Assessment baseline cards ──────────────────────────────── */
+function baselineInfo(exType, v) {
+  if (v == null) return { label: "—", color: "var(--text-hint)" };
 
-  if (!chartData || chartData.length === 0) {
-    canvas.style.display = "none";
-    wrap.innerHTML = `<div class="chart-empty">Complete at least one assessment to see closure progress.</div>`;
-    return;
+  if (exType === "palm") {
+    // Low closure = open hand = good for open palm
+    if (v <= 0.20) return { label: "Excellent",        color: "var(--green)"   };
+    if (v <= 0.35) return { label: "Good",              color: "var(--green)"   };
+    return               { label: "Limited extension",  color: "var(--danger)"  };
   }
 
-  canvas.style.display = "block";
-
-  const isDark   = html.getAttribute("data-theme") === "dark";
-  const dpr      = window.devicePixelRatio || 1;
-  const cssW     = wrap.offsetWidth || 680;
-  const cssH     = 260;
-
-  canvas.style.height = cssH + "px";
-  canvas.width        = cssW * dpr;
-  canvas.height       = cssH * dpr;
-
-  const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, cssW, cssH);
-
-  // Colours
-  const COL = {
-    grid:    isDark ? "rgba(255,245,220,0.07)" : "rgba(60,40,10,0.07)",
-    axis:    isDark ? "rgba(255,245,220,0.12)" : "rgba(60,40,10,0.12)",
-    label:   isDark ? "#5c5448"  : "#a89880",
-    palm:    "#2a8f58",
-    midFlex: isDark ? "#e8c97a"  : "#c4872a",
-    fist:    "#7b68ee",
-  };
-
-  // Update legend mid dot
-  const midDot = document.getElementById("legendMidDot");
-  if (midDot) midDot.style.background = COL.midFlex;
-
-  // Padding
-  const PL = 48, PR = 20, PT = 16, PB = 36;
-  const W  = cssW - PL - PR;
-  const H  = cssH - PT - PB;
-  const n  = chartData.length;
-
-  function xPos(i) {
-    return PL + (n === 1 ? W / 2 : (i / (n - 1)) * W);
-  }
-  function yPos(v) {
-    return PT + H - v * H;
+  if (exType === "mid_flex") {
+    // Target range is 0.4–0.6
+    if (v >= 0.40 && v <= 0.60) return { label: "Good",    color: "var(--green)"   };
+    if (v < 0.40)               return { label: "Limited",  color: "var(--danger)"  };
+    return                             { label: "Strong",   color: "var(--green)"   };
   }
 
-  // Grid lines + Y labels
-  ctx.textAlign    = "right";
-  ctx.font         = `${11 * (1 / dpr) + 11}px system-ui, sans-serif`;
-  ctx.font         = "11px system-ui, sans-serif";
+  if (exType === "fist") {
+    // Higher closure = tighter fist = good
+    if (v >= 0.70) return { label: "Good closure", color: "var(--green)"   };
+    if (v >= 0.50) return { label: "Moderate",     color: "var(--warning)" };
+    return               { label: "Limited",       color: "var(--danger)"  };
+  }
 
-  [0, 0.25, 0.5, 0.75, 1.0].forEach(v => {
-    const y = yPos(v);
-    ctx.beginPath();
-    ctx.strokeStyle = v === 0 ? COL.axis : COL.grid;
-    ctx.lineWidth   = 1;
-    ctx.moveTo(PL, y);
-    ctx.lineTo(PL + W, y);
-    ctx.stroke();
+  return { label: "—", color: "var(--text-hint)" };
+}
 
-    ctx.fillStyle = COL.label;
-    ctx.textAlign = "right";
-    ctx.fillText(v.toFixed(2), PL - 6, y + 4);
-  });
+function renderBaselineCards(closureChart) {
+  const baseline = closureChart?.[0];
 
-  // X axis baseline
-  ctx.beginPath();
-  ctx.strokeStyle = COL.axis;
-  ctx.lineWidth   = 1;
-  ctx.moveTo(PL, PT + H);
-  ctx.lineTo(PL + W, PT + H);
-  ctx.stroke();
+  const dateStr = (() => {
+    const raw = baseline?.date;
+    if (!raw) return null;
+    try {
+      return new Date(raw.replace(" ", "T")).toLocaleDateString(undefined, {
+        day: "numeric", month: "short", year: "numeric",
+      });
+    } catch (_) { return null; }
+  })();
 
-  // Series
-  const SERIES = [
-    { key: "palm",     color: COL.palm,    label: "Open Palm"   },
-    { key: "mid_flex", color: COL.midFlex, label: "Mid Flexion" },
-    { key: "fist",     color: COL.fist,    label: "Full Fist"   },
+  const fields = [
+    { ratingId: "blPalmRating", barId: "blPalmBar", rawId: "blPalmRaw", dateId: "blPalmDate", key: "palm",     exType: "palm"     },
+    { ratingId: "blMidRating",  barId: "blMidBar",  rawId: "blMidRaw",  dateId: "blMidDate",  key: "mid_flex", exType: "mid_flex" },
+    { ratingId: "blFistRating", barId: "blFistBar", rawId: "blFistRaw", dateId: "blFistDate", key: "fist",     exType: "fist"     },
   ];
 
-  SERIES.forEach(({ key, color }) => {
-    const pts = chartData
-      .map((d, i) => d[key] != null ? { x: xPos(i), y: yPos(d[key]) } : null)
-      .filter(Boolean);
+  fields.forEach(({ ratingId, barId, rawId, dateId, key, exType }) => {
+    const val            = baseline?.[key] ?? null;
+    const { label, color } = baselineInfo(exType, val);
 
-    if (pts.length === 0) return;
+    const elRating = document.getElementById(ratingId);
+    const elBar    = document.getElementById(barId);
+    const elRaw    = document.getElementById(rawId);
+    const elDate   = document.getElementById(dateId);
 
-    // Line
-    if (pts.length >= 2) {
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth   = 2;
-      ctx.lineJoin    = "round";
-      ctx.lineCap     = "round";
-      pts.forEach(({ x, y }, j) => j === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y));
-      ctx.stroke();
-    }
-
-    // Dots
-    pts.forEach(({ x, y }) => {
-      ctx.beginPath();
-      ctx.fillStyle = color;
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.fill();
-      // White ring
-      ctx.beginPath();
-      ctx.strokeStyle = isDark ? "#161512" : "#ffffff";
-      ctx.lineWidth = 1.5;
-      ctx.arc(x, y, 4, 0, Math.PI * 2);
-      ctx.stroke();
-    });
+    if (elRating) { elRating.textContent = label; elRating.style.color = color; }
+    if (elBar)    { elBar.style.width = val != null ? Math.round(val * 100) + "%" : "0%"; elBar.style.background = color; }
+    if (elRaw)    { elRaw.textContent = val != null ? `Closure value: ${val.toFixed(2)}` : ""; }
+    if (elDate)   { elDate.textContent = dateStr ? `Your starting point · ${dateStr}` : "Your starting point"; }
   });
-
-  // X axis labels
-  ctx.fillStyle = COL.label;
-  ctx.textAlign = "center";
-  const step = Math.max(1, Math.ceil(n / 8));
-  chartData.forEach((d, i) => {
-    if (i % step === 0 || i === n - 1) {
-      ctx.fillText(`#${d.idx}`, xPos(i), cssH - 6);
-    }
-  });
-
-  // X axis title
-  ctx.fillStyle = COL.label;
-  ctx.fillText("Assessment", PL + W / 2, cssH - 6);
 }
 
-/* ── Session history ─────────────────────────────────────────── */
+/* ── Exercise pills ──────────────────────────────────────────── */
+function exPills(exercises) {
+  if (!exercises || exercises.length === 0) {
+    return `<span style="color:var(--text-hint);font-size:.78rem;">—</span>`;
+  }
+
+  const MAX_SHOWN   = exercises.length > 3 ? 2 : 3;
+  const shown       = exercises.slice(0, MAX_SHOWN);
+  const overflowCnt = exercises.length - MAX_SHOWN;
+
+  const PILL_STYLE =
+    "display:inline-flex;align-items:center;" +
+    "padding:.18rem .55rem;border-radius:var(--radius-full);" +
+    "background:var(--warm-dim);color:var(--warm);" +
+    "font-size:.72rem;font-weight:600;white-space:nowrap;" +
+    "border:1px solid var(--warm-border);";
+
+  const pills = shown.map(e => {
+    const label = e.display_name || e.name ||
+                  (e.exercise || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    return `<span style="${PILL_STYLE}">${label}</span>`;
+  }).join("");
+
+  const more = overflowCnt > 0
+    ? `<span style="font-size:.72rem;color:var(--text-hint);font-weight:500;white-space:nowrap;">+${overflowCnt} more</span>`
+    : "";
+
+  return `<div style="display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;">${pills}${more}</div>`;
+}
+
+/* ── Session history table ───────────────────────────────────── */
 function renderSessionHistory(sessions) {
-  const list = document.getElementById("sessionList");
+  const tbody = document.getElementById("sessionTableBody");
 
   if (!sessions || sessions.length === 0) {
-    list.innerHTML = `<p class="text-muted text-sm">No sessions recorded yet.</p>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="table-empty">Complete your first session to see your progress here.</td></tr>`;
     return;
   }
 
-  list.innerHTML = sessions.map(s => {
-    const { day, mon } = fmtDate(s.completed_at);
-    const exCount  = s.exercises?.length || 0;
-    const dur      = fmtDuration(s.duration_s);
-    const pain     = s.pain_before ?? s.pain_after ?? null;
-    const painNum  = pain !== null ? pain : "—";
-    const pClass   = pain !== null ? painClass(pain) : "low";
+  tbody.innerHTML = sessions.map(s => {
+    const isIncomplete = s.status === "in_progress";
+    const { full }     = fmtDate(s.completed_at);
+
+    if (isIncomplete) {
+      const displayExs = s.exercises_completed?.length ? s.exercises_completed : [];
+      return `
+        <tr style="opacity:0.68;">
+          <td>
+            ${full}
+            <span style="display:inline-block;margin-left:.4rem;padding:.1rem .45rem;
+              border-radius:var(--radius-full);background:var(--surface-muted);
+              border:1px solid var(--border-md);font-size:.65rem;font-weight:600;
+              color:var(--text-hint);vertical-align:middle;">Incomplete</span>
+          </td>
+          <td>${exPills(displayExs)}</td>
+          <td>—</td>
+          <td><span style="color:var(--text-hint);">—</span></td>
+        </tr>`;
+    }
+
+    const dur    = fmtDuration(s.duration_s);
+    const pain   = s.pain_after ?? s.pain_before ?? null;
+    const painNum = pain !== null ? pain : "—";
+    const pClass  = pain !== null ? painClass(pain) : "";
+
+    // Detect guidance sessions — exercises have tracking_type "untracked"
+    const isGuidance = Array.isArray(s.exercises) &&
+      s.exercises.length > 0 &&
+      s.exercises.every(e => e.tracking_type === "untracked");
+
+    const GUIDED_PILL =
+      `<span style="display:inline-flex;align-items:center;padding:.18rem .55rem;
+         border-radius:var(--radius-full);background:var(--accent-subtle);
+         color:var(--accent);font-size:.72rem;font-weight:600;
+         border:1px solid var(--accent-subtle-2);">Guided</span>`;
 
     return `
-      <div class="session-row">
-        <div class="session-date-block">
-          <div class="session-date-day">${day}</div>
-          <div class="session-date-mon">${mon}</div>
-        </div>
-        <div class="session-meta">
-          <div class="session-meta-primary">
-            ${exCount} exercise${exCount !== 1 ? "s" : ""}
-          </div>
-          <div class="session-meta-secondary">${dur}</div>
-        </div>
-        <div class="session-pain-badge">
-          <div class="pain-badge-num ${pClass}">${painNum}</div>
-          <div class="pain-badge-label">pain</div>
-        </div>
-      </div>
-    `;
+      <tr>
+        <td>${full}</td>
+        <td>${isGuidance ? GUIDED_PILL : exPills(s.exercises)}</td>
+        <td>${dur}</td>
+        <td><span class="pain-badge-num ${pClass}">${painNum}</span></td>
+      </tr>`;
   }).join("");
 }
 
-/* ── Pain trend ──────────────────────────────────────────────── */
+/* ── Pain trend line chart (Canvas 2D) ────────────────────────── */
 function renderPainTrend(painHistory) {
-  const barsEl = document.getElementById("painBars");
-  const axisEl = document.getElementById("painAxis");
+  const emptyEl  = document.getElementById("painEmpty");
+  const canvasEl = document.getElementById("painCanvas");
+  const legendEl = document.getElementById("painLegend");
+  const curDisp  = document.getElementById("painCurrentDisplay");
+  const curNum   = document.getElementById("painCurrentNum");
 
-  if (!painHistory || painHistory.length === 0) {
-    barsEl.innerHTML = `<div style="font-size:.82rem;color:var(--text-hint);margin:auto;">No check-in data yet.</div>`;
+  if (!painHistory || painHistory.length < 2) {
+    emptyEl.style.display  = "flex";
+    canvasEl.style.display = "none";
+    legendEl.style.display = "none";
+    curDisp.style.display  = "none";
     return;
   }
 
-  barsEl.innerHTML = painHistory.map(p => {
-    const v     = p.value;
-    const pct   = Math.max(4, Math.round((v / 10) * 100));
-    const cls   = painClass(v);
-    const label = p.date ? p.date.slice(0, 10) : "";
-    const tip   = `${label ? label + ": " : ""}Pain ${v}/10`;
-    return `
-      <div class="pain-bar-item">
-        <div class="pain-tooltip">${tip}</div>
-        <div class="pain-bar-fill ${cls}" style="height:${pct}%;"></div>
-      </div>
-    `;
-  }).join("");
+  emptyEl.style.display  = "none";
+  canvasEl.style.display = "block";
+  legendEl.style.display = "flex";
 
-  // Axis: first and last date
-  if (painHistory.length >= 2) {
-    const first = painHistory[0].date?.slice(0, 10) || "";
-    const last  = painHistory[painHistory.length - 1].date?.slice(0, 10) || "";
-    axisEl.innerHTML = `<span>${first}</span><span>${last}</span>`;
+  // Current (most recent) pain value — shown above the chart
+  const latestV  = painHistory[painHistory.length - 1].value;
+  const curColor = latestV <= 3 ? "var(--green)" : latestV <= 6 ? "var(--warning)" : "var(--danger)";
+  curNum.textContent    = latestV;
+  curNum.style.color    = curColor;
+  curDisp.style.display = "flex";
+
+  // Resolve CSS variables to actual color strings for canvas use
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   }
+  const C_GREEN      = cssVar("--green");
+  const C_WARNING    = cssVar("--warning");
+  const C_DANGER     = cssVar("--danger");
+  const C_GRID       = cssVar("--border-md");
+  const C_LABEL      = cssVar("--text-hint");
+  const C_BAND_GREEN = cssVar("--green-subtle");
+  const C_BAND_AMBER = cssVar("--warm-dim");
+
+  function dotColor(v) {
+    return v <= 3 ? C_GREEN : v <= 6 ? C_WARNING : C_DANGER;
+  }
+
+  // Canvas resolution (HiDPI-aware)
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvasEl.offsetWidth || 600;
+  const H   = 200;
+  canvasEl.width        = Math.round(W * dpr);
+  canvasEl.height       = Math.round(H * dpr);
+  canvasEl.style.width  = W + "px";
+  canvasEl.style.height = H + "px";
+
+  const ctx = canvasEl.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  // Layout margins
+  const PAD = { left: 36, right: 12, top: 12, bottom: 28 };
+  const cW  = W - PAD.left - PAD.right;
+  const cH  = H - PAD.top  - PAD.bottom;
+  const n   = painHistory.length;
+
+  // Coordinate helpers — y-axis is 0 (top) to 10 (bottom of chart area)
+  const xOf = i => PAD.left + (i / (n - 1)) * cW;
+  const yOf = v => PAD.top  + (1 - v / 10) * cH;
+
+  // ── Reference bands ────────────────────────────────────────────
+  // Light green: y 0–3 (bottom third of chart)
+  ctx.fillStyle = C_BAND_GREEN;
+  ctx.fillRect(PAD.left, yOf(3), cW, yOf(0) - yOf(3));
+
+  // Light amber: y 4–6 (middle band)
+  ctx.fillStyle = C_BAND_AMBER;
+  ctx.fillRect(PAD.left, yOf(6), cW, yOf(3) - yOf(6));
+
+  // ── Gridlines + Y-axis labels ──────────────────────────────────
+  ctx.font         = `11px "DM Sans", system-ui, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign    = "right";
+
+  for (const gv of [0, 2, 4, 6, 8, 10]) {
+    const gy = yOf(gv);
+
+    ctx.strokeStyle = C_GRID;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, gy);
+    ctx.lineTo(W - PAD.right, gy);
+    ctx.stroke();
+
+    ctx.fillStyle = C_LABEL;
+    ctx.fillText(String(gv), PAD.left - 5, gy);
+  }
+
+  // ── X-axis date labels (every 5th point) ──────────────────────
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "top";
+  ctx.fillStyle    = C_LABEL;
+
+  for (let i = 0; i < n; i++) {
+    if (i % 5 !== 0 && i !== n - 1) continue;
+    const label = (painHistory[i].date || "").slice(5, 10); // "MM-DD"
+    ctx.fillText(label, xOf(i), H - PAD.bottom + 4);
+  }
+
+  // ── Smooth line segments (Catmull-Rom via cubic bezier) ────────
+  // Each segment is colored by the lower of its two endpoint pain values.
+  ctx.lineWidth = 2;
+  ctx.lineCap   = "round";
+  ctx.lineJoin  = "round";
+
+  for (let i = 0; i < n - 1; i++) {
+    const im1 = Math.max(0, i - 1);
+    const ip2 = Math.min(n - 1, i + 2);
+
+    // Catmull-Rom control points
+    const cp1x = xOf(i)     + (xOf(i + 1)   - xOf(im1)) / 6;
+    const cp1y = yOf(painHistory[i].value)     + (yOf(painHistory[i + 1].value) - yOf(painHistory[im1].value)) / 6;
+    const cp2x = xOf(i + 1) - (xOf(ip2)      - xOf(i))  / 6;
+    const cp2y = yOf(painHistory[i + 1].value) - (yOf(painHistory[ip2].value)   - yOf(painHistory[i].value))  / 6;
+
+    ctx.strokeStyle = dotColor(Math.min(painHistory[i].value, painHistory[i + 1].value));
+    ctx.beginPath();
+    ctx.moveTo(xOf(i),     yOf(painHistory[i].value));
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, xOf(i + 1), yOf(painHistory[i + 1].value));
+    ctx.stroke();
+  }
+
+  // ── Dots (5 px radius, colored by pain value) ─────────────────
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = dotColor(painHistory[i].value);
+    ctx.beginPath();
+    ctx.arc(xOf(i), yOf(painHistory[i].value), 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+/* ── Insights ────────────────────────────────────────────────── */
+function renderInsights(ins) {
+  const section = document.getElementById("insightsSection");
+  const grid    = document.getElementById("insightsGrid");
+  if (!section || !grid) return;
+
+  const cards = [];
+
+  // Closure improvements
+  const CLOSURE_NAMES = {
+    palm_improvement:     "open palm",
+    mid_flex_improvement: "mid flexion",
+    fist_improvement:     "full fist",
+  };
+  for (const [key, name] of Object.entries(CLOSURE_NAMES)) {
+    const pct = ins[key];
+    if (pct == null) continue;
+    const dir   = pct >= 0 ? "improved" : "decreased";
+    const color = pct >= 0 ? "var(--green)" : "var(--danger)";
+    const sign  = pct >= 0 ? "+" : "";
+    cards.push(`
+      <div class="insight-card">
+        <div class="insight-icon">📈</div>
+        <div class="insight-text">Your <strong>${name}</strong> range has ${dir} by
+          <strong style="color:${color};">${sign}${Math.abs(pct)}%</strong> since you started.</div>
+        <div class="insight-sub">Comparing your first and latest assessment</div>
+      </div>`);
+  }
+
+  // Best hold
+  if (ins.best_hold_s > 0) {
+    const typeLabel = ins.best_hold_type === "full_fist" ? "full fist"
+                    : ins.best_hold_type === "open_palm" ? "open palm"
+                    : ins.best_hold_type === "mid_flexion" ? "mid flexion"
+                    : ins.best_hold_type || "hold";
+    const dateStr = ins.best_hold_date
+      ? new Date(ins.best_hold_date).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+      : "";
+    cards.push(`
+      <div class="insight-card">
+        <div class="insight-icon">⏱️</div>
+        <div class="insight-text">Your best <strong>${typeLabel}</strong> hold was
+          <strong>${ins.best_hold_s}s</strong>${dateStr ? ` on ${dateStr}` : ""}.</div>
+        <div class="insight-sub">Keep pushing to beat your personal record</div>
+      </div>`);
+  }
+
+  // Sessions last 7 days
+  {
+    const n = ins.sessions_last_7d ?? 0;
+    cards.push(`
+      <div class="insight-card">
+        <div class="insight-icon">🗓️</div>
+        <div class="insight-text">You've completed <strong>${n} session${n !== 1 ? "s" : ""}</strong>
+          in the last 7 days.</div>
+        <div class="insight-sub">${n >= 4 ? "Excellent consistency!" : n >= 2 ? "Good work — keep it regular." : n === 1 ? "A great start — aim for 3+ sessions per week." : "No sessions yet this week — let's get started!"}</div>
+      </div>`);
+  }
+
+  // Pain comparison
+  if (ins.avg_pain_this_week != null) {
+    let comparison = "";
+    if (ins.avg_pain_last_week != null) {
+      const diff = ins.avg_pain_this_week - ins.avg_pain_last_week;
+      if (Math.abs(diff) < 0.5)     comparison = "about the same as last week";
+      else if (diff < 0) comparison = `lower than last week (${ins.avg_pain_last_week})`;
+      else               comparison = `higher than last week (${ins.avg_pain_last_week})`;
+    }
+    cards.push(`
+      <div class="insight-card">
+        <div class="insight-icon">💊</div>
+        <div class="insight-text">Your average pain this week is
+          <strong>${ins.avg_pain_this_week}/10</strong>${comparison ? ` — ${comparison}` : ""}.</div>
+        <div class="insight-sub">Based on your daily check-in reports</div>
+      </div>`);
+  }
+
+  if (cards.length === 0) {
+    grid.innerHTML = `<div class="insight-card" style="grid-column:1/-1;">
+      <div class="insight-text" style="color:var(--text-hint);">
+        Complete a few sessions and assessments to unlock personalised insights.
+      </div>
+    </div>`;
+  } else {
+    grid.innerHTML = cards.join("");
+  }
+
+  section.style.display = "block";
+}
+
+/* ── Monthly history ──────────────────────────────────────────── */
+let expandedMonthIdx = null;
+
+function toggleMonthRow(idx) {
+  document.querySelectorAll(".month-row").forEach((row, i) => {
+    if (i === idx) {
+      const wasExpanded = row.classList.contains("expanded");
+      row.classList.toggle("expanded", !wasExpanded);
+      expandedMonthIdx = wasExpanded ? null : idx;
+    } else {
+      row.classList.remove("expanded");
+    }
+  });
+}
+
+function renderMonthlyHistory(months) {
+  const section = document.getElementById("monthlyHistorySection");
+  const list    = document.getElementById("monthlyHistoryList");
+  if (!months || months.length === 0) { section.style.display = "none"; return; }
+
+  section.style.display = "block";
+
+  list.innerHTML = months.map((m, idx) => {
+    const pain = m.avg_pain != null ? m.avg_pain : "—";
+    const best = m.best_closure != null
+      ? `${Math.round(m.best_closure * 100)}%`
+      : "—";
+
+    const sessionRows = (m.sessions || []).map(s => {
+      const isInc    = s.status === "in_progress";
+      const { full } = fmtDate(s.completed_at);
+      if (isInc) {
+        const displayExs = s.exercises_completed?.length ? s.exercises_completed : [];
+        return `<tr style="opacity:0.52;">
+          <td>${full} <span style="margin-left:.3rem;padding:.08rem .38rem;
+            border-radius:var(--radius-full);background:var(--surface-muted);
+            border:1px solid var(--border-md);font-size:.62rem;font-weight:600;
+            color:var(--text-hint);">Incomplete</span></td>
+          <td>${exPills(displayExs)}</td>
+          <td>—</td>
+          <td>—</td>
+        </tr>`;
+      }
+      const dur  = fmtDuration(s.duration_s);
+      const p    = s.pain_after ?? s.pain_before ?? null;
+      const pNum = p !== null ? p : "—";
+      const pCls = p !== null ? painClass(p) : "";
+      return `<tr>
+        <td>${full}</td>
+        <td>${exPills(s.exercises)}</td>
+        <td>${dur}</td>
+        <td><span class="pain-badge-num ${pCls}">${pNum}</span></td>
+      </tr>`;
+    }).join("");
+
+    return `
+      <div class="month-row" id="monthRow${idx}">
+        <div class="month-row-header" onclick="toggleMonthRow(${idx})">
+          <span class="month-name">${m.month_name}</span>
+          <span class="month-stat">${m.sessions_count} session${m.sessions_count !== 1 ? "s" : ""}</span>
+          <span class="month-stat">Avg pain: ${pain}</span>
+          <span class="month-stat">Peak ROM: ${best}</span>
+          <span class="month-chevron">&#9660;</span>
+        </div>
+        <div class="month-detail">
+          <div class="session-table-wrap" style="border:none;border-radius:0;">
+            <table class="session-table">
+              <thead><tr><th>Date</th><th>Exercises</th><th>Duration</th><th>Pain after</th></tr></thead>
+              <tbody>${sessionRows}</tbody>
+            </table>
+          </div>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+/* ── Plan progression history ────────────────────────────────── */
+function renderProgressionHistory(entries) {
+  const section  = document.getElementById("progressionHistorySection");
+  const timeline = document.getElementById("progressionTimeline");
+  if (!entries || entries.length === 0) { section.style.display = "none"; return; }
+
+  section.style.display = "block";
+
+  timeline.innerHTML = entries.map(e => {
+    const raw = e.progressed_at || "";
+    let dateLabel = "";
+    try {
+      const d = new Date(raw.replace(" ", "T"));
+      dateLabel = d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    } catch (_) {
+      dateLabel = raw.slice(0, 10);
+    }
+    const desc = e.description || `${(e.exercise || "").replace(/_/g, " ")} updated`;
+    return `
+      <div class="prog-entry">
+        <div class="prog-dot"></div>
+        <div class="prog-entry-body">
+          <span class="prog-entry-date">${dateLabel}</span>
+          <span class="prog-entry-desc">${desc}</span>
+        </div>
+      </div>`;
+  }).join("");
+}
+
+/* ── Health flags ────────────────────────────────────────────── */
+const HEALTH_FLAG_DEFS = {
+  inconsistent_pain_closure: {
+    sev: "amber",
+    title: "Movement decreasing despite low pain",
+    msg: "Hand movement has been decreasing despite low pain reports. Reporting pain more accurately will help adjust your plan.",
+  },
+  high_pain_good_closure: {
+    sev: "red",
+    title: "High pain with improving range of motion",
+    msg: "Pain levels have been high recently. While range of motion is improving, pushing through significant pain can cause injury.",
+  },
+  plateau: {
+    sev: "amber",
+    title: "Progress has levelled off",
+    msg: "Progress has levelled off over the last 5 sessions. It may be time to reassess your plan.",
+  },
+  rapid_decline: {
+    sev: "red",
+    title: "Significant drop in hand movement",
+    msg: "A significant drop in hand movement was recorded in the last session. This could indicate a flare-up.",
+  },
+  pain_increasing: {
+    sev: "amber",
+    title: "Increasing pain trend",
+    msg: "Reported pain has been increasing over the last week.",
+  },
+};
+
+const SURFACED_FLAGS = Object.keys(HEALTH_FLAG_DEFS);
+
+function renderHealthFlags(activeFlags) {
+  const section = document.getElementById("healthFlagsSection");
+  const grid    = document.getElementById("healthFlagsGrid");
+  const toShow  = (activeFlags || []).filter(f => SURFACED_FLAGS.includes(f.flag_type));
+
+  if (!toShow.length) { section.style.display = "none"; return; }
+  section.style.display = "block";
+
+  grid.innerHTML = toShow.map(f => {
+    const def   = HEALTH_FLAG_DEFS[f.flag_type] || { sev: "amber", title: f.flag_type, msg: "" };
+    const isRed = def.sev === "red";
+    const bg     = isRed ? "rgba(220,38,38,.06)" : "var(--warm-dim)";
+    const border = isRed ? "rgba(220,38,38,.35)"  : "var(--warm-border)";
+
+    let dateStr = "";
+    if (f.detected_at) {
+      try {
+        dateStr = new Date(f.detected_at.replace(" ", "T"))
+          .toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+      } catch (_) { dateStr = f.detected_at.slice(0, 10); }
+    }
+
+    return `
+      <div style="background:${bg};border:1.5px solid ${border};border-radius:var(--radius);
+                  padding:.9rem 1.1rem;display:flex;justify-content:space-between;
+                  align-items:flex-start;gap:.75rem;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:.88rem;font-weight:700;color:var(--text);margin-bottom:.25rem;">
+            ${def.title}
+          </div>
+          <div style="font-size:.82rem;color:var(--text-muted);line-height:1.5;">${def.msg}</div>
+          ${dateStr ? `<div style="font-size:.72rem;color:var(--text-hint);margin-top:.3rem;">Detected ${dateStr}</div>` : ""}
+        </div>
+        <button
+          onclick="dismissHealthFlag(${f.id})"
+          style="font-size:.72rem;font-weight:600;color:var(--text-hint);background:none;
+                 border:1px solid var(--border-md);border-radius:var(--radius-full);
+                 padding:.2rem .65rem;cursor:pointer;white-space:nowrap;flex-shrink:0;margin-top:.1rem;"
+          title="Dismiss for 7 days">
+          Dismiss
+        </button>
+      </div>`;
+  }).join("");
+}
+
+async function dismissHealthFlag(flagId) {
+  try {
+    await window.pywebview.api.dismiss_flag(flagId);
+    const res = await window.pywebview.api.get_active_flags();
+    if (res?.ok) renderHealthFlags(res.flags || []);
+  } catch (_) {}
 }
 
 /* ── Boot ────────────────────────────────────────────────────── */
 async function boot() {
   try {
-    const data = await api.getProgressData();
+    const [data, insightsRes, monthlyRes, progLogRes, flagsRes] = await Promise.all([
+      api.getProgressData(),
+      api.getInsights(),
+      api.getMonthlyHistory(),
+      window.pywebview.api.get_progression_log(),
+      window.pywebview.api.get_active_flags(),
+    ]);
 
     if (!data.ok) throw new Error(data.error || "failed");
 
@@ -715,15 +1289,26 @@ async function boot() {
     document.getElementById("ovBestHold").textContent      = data.best_hold > 0 ? data.best_hold : "—";
     document.getElementById("ovAvgPain").textContent       = data.avg_pain > 0 ? data.avg_pain : "—";
 
-    // Chart
-    window._chartData = data.closure_chart || [];
-    drawClosureChart(window._chartData);
+    // Baseline
+    renderBaselineCards(data.closure_chart || []);
 
     // History
     renderSessionHistory(data.session_history || []);
 
     // Pain trend
     renderPainTrend(data.pain_history || []);
+
+    // Insights
+    if (insightsRes?.ok) renderInsights(insightsRes);
+
+    // Monthly history
+    if (monthlyRes?.ok) renderMonthlyHistory(monthlyRes.months || []);
+
+    // Plan progression history
+    if (progLogRes?.ok) renderProgressionHistory(progLogRes.entries || []);
+
+    // Health flags
+    if (flagsRes?.ok) renderHealthFlags(flagsRes.flags || []);
 
     document.getElementById("loadingView").style.display = "none";
     document.getElementById("mainView").style.display    = "block";
@@ -739,6 +1324,37 @@ if (window.pywebview?.api) {
 } else {
   window.addEventListener("pywebviewready", boot, { once: true });
 }
+
+/* ── Demo badge ─────────────────────────────────────────────── */
+(function () {
+  function attachDemoBadge() {
+    window.pywebview.api.is_demo_mode().then(function (res) {
+      if (res && res.ok && res.is_demo) {
+        var wrap = document.querySelector('.topbar > div');
+        if (!wrap) return;
+        var b = document.createElement('span');
+        b.className = 'badge badge-accent';
+        b.textContent = 'Demo';
+        b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+        wrap.appendChild(b);
+      }
+    }).catch(function () {});
+  }
+  window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+  if (window.pywebview && window.pywebview.api) {
+    window.removeEventListener('pywebviewready', attachDemoBadge);
+    attachDemoBadge();
+  }
+}());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

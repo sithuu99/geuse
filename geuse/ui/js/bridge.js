@@ -105,11 +105,21 @@ const api = (() => {
   /** Returns { ok, plan: { exercises, sessions_per_week, notes } } */
   const getPlan = () => call("get_plan");
 
+  /**
+   * Derive display-ready per-exercise results, plain-English summary,
+   * and milestone goals from the latest saved assessment.
+   * Returns { ok, exercises, summary, goals }
+   */
+  const getAssessmentSummary = () => call("get_assessment_summary");
+
   /* -------------------------------------------------------------- */
   /* App reset                                                      */
   /* -------------------------------------------------------------- */
   /** Wipe all data and restart from welcome.html. */
   const resetApp = () => call("reset_app");
+
+  /** Returns { ok, day: number } — days since the user profile was created (1-indexed). */
+  const getRecoveryDay = () => call("get_recovery_day");
 
   /* -------------------------------------------------------------- */
   /* Session history (dashboard)                                    */
@@ -119,6 +129,14 @@ const api = (() => {
 
   /** Returns { ok, total_sessions, streak, best_hold, avg_pain, closure_chart, session_history, pain_history } */
   const getProgressData = () => call("get_progress_data");
+
+  /** Returns { ok, activity_grid, sessions_last_7d, avg_pain_this_week, avg_pain_last_week,
+   *            palm_improvement, mid_flex_improvement, fist_improvement,
+   *            best_hold_s, best_hold_date, best_hold_type, best_closures } */
+  const getInsights = () => call("get_insights");
+
+  /** Returns { ok, months: [{ month_key, month_name, sessions_count, avg_pain, best_closure, sessions[] }] } */
+  const getMonthlyHistory = () => call("get_monthly_history");
 
   /* -------------------------------------------------------------- */
   /* Session                                                         */
@@ -139,10 +157,13 @@ const api = (() => {
     saveSelfReport,
     saveDailyCheckin,
     saveAssessmentResult,
-    generateAndSavePlan, getPlan,
+    generateAndSavePlan, getPlan, getAssessmentSummary,
     getSessionHistory,
     getProgressData,
+    getInsights,
+    getMonthlyHistory,
     saveSessionResult,
     resetApp,
+    getRecoveryDay,
   };
 })();

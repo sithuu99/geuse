@@ -5,21 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Geuse</title>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
     /* ── Page-specific overrides ──────────────────────────────── */
 
     body { overflow: hidden; }
-
-    /* ── Topbar logo ───────────────────────────────────────────── */
-    .logo-text {
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: var(--text);
-      user-select: none;
-    }
-    .logo-text .s { color: var(--accent); }
 
     /* ── Left panel ────────────────────────────────────────────── */
     .left-panel {
@@ -223,6 +213,37 @@
       border-color: var(--green-subtle-2);
       box-shadow: 0 0 0 1px var(--green-subtle-2), 0 0 24px var(--green-subtle);
     }
+
+    /* ── Camera source selector ────────────────────────────────── */
+    .split-layout { grid-template-rows: 1fr; }
+
+    .cam-source-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      flex-shrink: 0;
+    }
+    .cam-source-label {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
+      cursor: default;
+    }
+    #cameraSelect {
+      width: auto;
+      min-width: 108px;
+      font-size: .78rem;
+      padding: .22rem .5rem;
+      padding-right: 2rem;
+    }
   </style>
 </head>
 <body>
@@ -235,7 +256,7 @@
 
     <!-- Logo -->
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
 
     <!-- Step dots (centred by grid) -->
@@ -305,6 +326,17 @@
     <!-- ── Right panel ────────────────────────────────────────── -->
     <main class="right-panel">
 
+      <!-- Camera source selector -->
+      <div class="cam-source-row">
+        <label class="cam-source-label" for="cameraSelect">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Camera source
+        </label>
+        <select id="cameraSelect" onchange="switchCamera(this.value)">
+          <option value="0">Camera 0</option>
+        </select>
+      </div>
+
       <!-- Camera container -->
       <div class="camera-container" id="cameraContainer">
 
@@ -356,6 +388,38 @@
     </main>
   </div><!-- /.split-layout -->
 </div><!-- /.app-shell -->
+
+<!-- ── Demo mode ──────────────────────────────────────────────── -->
+<button
+  id="demoTrigger"
+  style="
+    position:fixed; bottom:1.25rem; right:1.5rem; z-index:100;
+    background:none; border:none; cursor:pointer;
+    font-size:.75rem; color:var(--text-hint);
+    font-family:var(--font-sans); padding:.25rem .4rem;
+    border-radius:var(--radius-sm);
+    transition: color 0.2s ease;
+  "
+  onmouseover="this.style.color='var(--text-muted)'"
+  onmouseout="this.style.color='var(--text-hint)'"
+>Demo mode</button>
+
+<div
+  id="demoConfirm"
+  style="
+    display:none; position:fixed; bottom:3.25rem; right:1.5rem; z-index:100;
+    background:var(--surface); border:1px solid var(--border-md);
+    border-radius:var(--radius); padding:1rem 1.25rem;
+    box-shadow:var(--shadow); width:270px;
+    font-size:.85rem; color:var(--text-muted); line-height:1.5;
+  "
+>
+  <p style="margin-bottom:.8rem;">This will load a demo account with sample data. Continue?</p>
+  <div style="display:flex; gap:.5rem; justify-content:flex-end;">
+    <button id="demoNo"  class="btn btn-ghost btn-sm">No</button>
+    <button id="demoYes" class="btn btn-primary btn-sm">Yes</button>
+  </div>
+</div>
 
 
 <script>
@@ -520,9 +584,31 @@
       });
   }
 
+  /* -- Camera selector ----------------------------------------- */
+  async function initCameraSelector() {
+    try {
+      const res = await window.pywebview.api.get_cameras();
+      if (!res.ok || !res.cameras || !res.cameras.length) return;
+      const sel = document.getElementById("cameraSelect");
+      sel.innerHTML = res.cameras.map(c =>
+        `<option value="${c.index}">${c.label}</option>`
+      ).join("");
+    } catch (_) {}
+  }
+
+  async function switchCamera(val) {
+    polling = false;
+    try {
+      await window.pywebview.api.switch_camera(parseInt(val, 10));
+    } catch (_) {}
+    polling = true;
+    schedulePoll();
+  }
+
   /* -- Camera init --------------------------------------------- */
   async function initCamera() {
     camInitText.textContent = "Starting camera\u2026";
+    await initCameraSelector();
 
     try {
       await window.pywebview.api.start_camera();
@@ -555,6 +641,66 @@
     window.removeEventListener("pywebviewready", initCamera);
     initCamera();
   }
+
+  /* ── Demo mode handlers ─────────────────────────────────────── */
+  document.getElementById('demoTrigger').addEventListener('click', function () {
+    document.getElementById('demoConfirm').style.display = 'block';
+  });
+  document.getElementById('demoNo').addEventListener('click', function () {
+    document.getElementById('demoConfirm').style.display = 'none';
+  });
+  document.getElementById('demoYes').addEventListener('click', async function () {
+    var btn = document.getElementById('demoYes');
+    btn.textContent = 'Loading…';
+    btn.disabled = true;
+    console.log('[Geuse] demo: calling load_demo…');
+    try {
+      var res = await window.pywebview.api.load_demo();
+      console.log('[Geuse] demo: load_demo response:', JSON.stringify(res));
+      if (res && res.ok) {
+        window.pywebview.api.navigate('dashboard');
+      } else {
+        console.error('[Geuse] demo: seed failed —', res && res.error);
+        btn.textContent = 'Yes';
+        btn.disabled = false;
+      }
+    } catch (err) {
+      console.error('[Geuse] demo: exception:', err);
+      btn.textContent = 'Yes';
+      btn.disabled = false;
+    }
+  });
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

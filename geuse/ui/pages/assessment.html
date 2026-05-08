@@ -6,10 +6,12 @@
   <title>Geuse — Assessment</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    /* ── Logo ─────────────────────────────────────────────────── */
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
+    /* ── Layout: ensure panels fill full split height ─────────── */
+    .split-layout { grid-template-rows: 1fr; }
+    .panel        { min-height: 0; }
+    .panel-main   { min-height: 0; gap: .75rem; }
 
     /* ── Left panel ───────────────────────────────────────────── */
     /* Global .panel already gives: flex-col, padding, border-right, overflow-y:auto, bg:var(--bg) */
@@ -281,6 +283,63 @@
     .recording-section { display: contents; }
     .recording-section.hidden > * { display: none; }
 
+    /* ── Hold progress bar ───────────────────────────────────────── */
+    .hold-progress-wrap { margin-bottom: .75rem; }
+
+    .hold-progress-track {
+      height: 4px;
+      background: var(--border-md);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: .45rem;
+    }
+
+    .hold-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.08s linear, background 0.25s ease;
+    }
+
+    .hold-progress-wrap.ready .hold-progress-fill { background: var(--green); }
+
+    .hold-progress-label {
+      font-size: .75rem;
+      font-weight: 500;
+      color: var(--text-hint);
+      transition: color 0.2s ease;
+    }
+
+    .hold-progress-wrap.ready .hold-progress-label { color: var(--green); font-weight: 600; }
+
+    /* ── Record inline message ────────────────────────────────────── */
+    .record-inline-msg {
+      display: block;
+      font-size: .78rem;
+      color: var(--text-hint);
+      margin-top: .5rem;
+      min-height: 1.1em;
+    }
+
+    /* ── Stability dots ───────────────────────────────────────────── */
+    .stability-dots {
+      display: flex;
+      gap: .28rem;
+      margin-top: .65rem;
+      flex-wrap: wrap;
+    }
+    .stability-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--border-md);
+      transition: background 0.15s ease;
+      flex-shrink: 0;
+    }
+    .stability-dot.filled { background: var(--warning); }
+    .stability-dot.stable { background: var(--green); }
+
     /* ── Right panel: camera ──────────────────────────────────── */
     .camera-container {
       flex: 1;
@@ -293,9 +352,10 @@
     }
 
     #cameraFeed {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
       display: block;
       opacity: 0;
       transition: opacity 0.4s ease;
@@ -347,6 +407,178 @@
       max-width: 22ch;
       line-height: 1.4;
     }
+
+    /* ── Hand-lost: amber border pulse ──────────────────────── */
+    @keyframes camBorderPulse {
+      0%, 100% { box-shadow: 0 0 0 0   rgba(196,135,42,.15); }
+      50%       { box-shadow: 0 0 0 12px rgba(196,135,42,.32); }
+    }
+    .hand-lost-glow {
+      animation: camBorderPulse 1.1s ease-in-out infinite;
+      outline: 2px solid var(--warning, #c4872a) !important;
+      outline-offset: -2px;
+    }
+
+    /* ── Hand-lost banner ─────────────────────────────────────── */
+    .hand-lost-banner {
+      display: none;
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      background: rgba(168,108,16,.94);
+      backdrop-filter: blur(3px);
+      padding: .75rem 1.1rem;
+      align-items: center;
+      gap: .85rem;
+      color: #fff;
+      border-radius: 0;
+    }
+    .hand-lost-banner.show { display: flex; }
+    .hlb-diagram { position: relative; width: 44px; height: 44px; flex-shrink: 0; }
+    .hlb-text-wrap { flex: 1; min-width: 0; }
+    .hlb-title { font-size: .9rem; font-weight: 700; line-height: 1.2; margin-bottom: .1rem; }
+    .hlb-sub   { font-size: .77rem; opacity: .88; line-height: 1.4; }
+
+    /* ── Positioning guide overlay ───────────────────────────── */
+    #positioningGuide {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0,0,0,.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+    }
+    .pg-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1.75rem 2rem;
+      max-width: 360px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+      box-shadow: 0 8px 40px rgba(0,0,0,.25);
+    }
+    .pg-bar-wrap { height: 3px; background: var(--border-md); border-radius: 2px; overflow: hidden; }
+    .pg-bar-fill {
+      height: 100%; background: var(--accent); border-radius: 2px;
+      width: 0%; transition: width 0.95s linear;
+    }
+    .pg-demo {
+      display: flex; align-items: center; justify-content: center;
+      padding: 1rem 0; font-size: 3rem; line-height: 1;
+      background: var(--surface-muted);
+      border-radius: var(--radius); border: 1px solid var(--border);
+      user-select: none;
+    }
+    .pg-tips {
+      margin: 0; padding-left: 1.25rem;
+      display: flex; flex-direction: column; gap: .35rem;
+      font-size: .84rem; color: var(--text-muted); line-height: 1.5;
+    }
+    .pg-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 1rem; padding-top: .5rem; border-top: 1px solid var(--border);
+    }
+    .pg-countdown { font-size: .8rem; color: var(--text-hint); font-weight: 500; }
+
+    /* ── Skip trigger ───────────────────────────────────────── */
+    .btn-skip-trigger {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      font-size: .78rem;
+      color: var(--text-hint);
+      text-decoration: underline;
+      text-decoration-color: transparent;
+      margin-top: .7rem;
+      display: block;
+      text-align: left;
+      transition: color 0.2s ease, text-decoration-color 0.2s ease;
+      font-family: var(--font-sans, inherit);
+    }
+    .btn-skip-trigger:hover {
+      color: var(--text-muted);
+      text-decoration-color: var(--border-md);
+    }
+
+    /* ── Skip card ───────────────────────────────────────────── */
+    .skip-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.4rem;
+      margin-top: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: .8rem;
+    }
+    .skip-card-heading {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 0;
+      font-family: var(--font-serif);
+    }
+    .skip-card-body {
+      font-size: .83rem;
+      color: var(--text-muted);
+      line-height: 1.65;
+      margin: 0;
+    }
+    .skip-reason-pills {
+      display: flex;
+      flex-direction: column;
+      gap: .45rem;
+    }
+    .chip.skip-selected {
+      background: var(--accent-subtle);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .skip-cancel-link {
+      font-size: .8rem;
+      color: var(--text-hint);
+      text-align: center;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+      transition: color 0.2s ease;
+    }
+    .skip-cancel-link:hover { color: var(--text-muted); }
+
+    /* ── Camera source selector ───────────────────────────────── */
+    .cam-source-row {
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+      flex-shrink: 0;
+    }
+    .cam-source-label {
+      display: flex;
+      align-items: center;
+      gap: .35rem;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      white-space: nowrap;
+      flex-shrink: 0;
+      user-select: none;
+      cursor: default;
+    }
+    #cameraSelect {
+      width: auto;
+      min-width: 108px;
+      font-size: .78rem;
+      padding: .22rem .5rem;
+      padding-right: 2rem;
+    }
   </style>
 </head>
 <body>
@@ -355,7 +587,7 @@
   <!-- ── Topbar ─────────────────────────────────────────────────── -->
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
     <div class="step-dots" aria-label="Step 4 of 5">
       <div class="step-dot"></div>
@@ -407,6 +639,7 @@
             <span class="closure-number" id="closureNumber">—</span>
             <span class="closure-guidance" id="closureGuidance">Waiting for hand…</span>
           </div>
+          <div class="stability-dots" id="stabilityDots"></div>
 
           <div class="hold-stats">
             <div>
@@ -431,10 +664,30 @@
 
         <!-- Record button -->
         <div class="record-btn-wrap">
-          <button class="btn btn-primary" id="btnRecord">Record Attempt</button>
+          <div class="hold-progress-wrap" id="holdProgressWrap">
+            <div class="hold-progress-track">
+              <div class="hold-progress-fill" id="holdProgressFill"></div>
+            </div>
+            <span class="hold-progress-label" id="holdProgressLabel">Hold for 2s&#8230;</span>
+          </div>
+          <button class="btn btn-primary" id="btnRecord" disabled>Record Attempt</button>
+          <span class="record-inline-msg" id="recordInlineMsg"></span>
+          <button class="btn-skip-trigger" id="btnSkipTrigger">I'm unable to do this exercise</button>
         </div>
 
       </div><!-- /.recording-section -->
+
+      <!-- Skip card — shown when patient cannot attempt the exercise -->
+      <div class="skip-card" id="skipCard" style="display:none;">
+        <p class="skip-card-heading">That's okay — let's note this down</p>
+        <p class="skip-card-body">Some exercises may not be possible right now. We will start gently and work toward this over time.</p>
+        <div class="skip-reason-pills">
+          <button class="chip" id="skipPainPill">Too painful to attempt</button>
+          <button class="chip" id="skipRangePill">Unable to reach this position</button>
+        </div>
+        <button class="btn btn-primary" id="btnSkipConfirm" disabled>Skip this exercise</button>
+        <a class="skip-cancel-link" id="btnCancelSkip" href="#">Go back and try again</a>
+      </div>
 
       <!-- ── Pain check phase ────────────────────────────────── -->
       <div class="pain-check" id="painCheck">
@@ -461,7 +714,33 @@
     <!-- ── Right panel — camera ───────────────────────────────── -->
     <main class="panel-main">
 
+      <div class="cam-source-row">
+        <label class="cam-source-label" for="cameraSelect">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Camera source
+        </label>
+        <select id="cameraSelect" onchange="switchCamera(this.value)">
+          <option value="0">Camera 0</option>
+        </select>
+      </div>
+
       <div class="camera-container" id="cameraContainer">
+        <!-- Hand-lost banner — shown when hand leaves view for >2 s -->
+        <div class="hand-lost-banner" id="handLostBanner" role="alert">
+          <div class="hlb-diagram" aria-hidden="true">
+            <svg width="44" height="44" viewBox="0 0 44 44" fill="none"
+                 style="position:absolute;inset:0;">
+              <rect x="2" y="2" width="40" height="40" rx="4"
+                    stroke="rgba(255,255,255,.65)" stroke-width="1.5" stroke-dasharray="5 2"/>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;
+                        justify-content:center;font-size:20px;line-height:1;">✋</div>
+          </div>
+          <div class="hlb-text-wrap">
+            <div class="hlb-title">Hand not detected</div>
+            <div class="hlb-sub">Please reposition your hand in front of the camera</div>
+          </div>
+        </div>
         <div class="cam-corner cam-corner-tl"></div>
         <div class="cam-corner cam-corner-tr"></div>
         <div class="cam-corner cam-corner-bl"></div>
@@ -473,7 +752,7 @@
           <p id="camInitText">Starting camera…</p>
         </div>
 
-        <img id="cameraFeed" alt="Live camera feed" />
+        <canvas id="cameraFeed" aria-label="Live camera feed"></canvas>
       </div>
 
       <div class="camera-footer">
@@ -491,6 +770,25 @@
   </div><!-- /.split-layout -->
 </div><!-- /.app-shell -->
 
+<!-- Positioning guide (first session only, auto-dismisses in 3 s) -->
+<div id="positioningGuide" style="display:none;">
+  <div class="pg-card">
+    <div style="font-family:var(--font-serif);font-size:1.15rem;font-weight:700;color:var(--text);">
+      Position your hand
+    </div>
+    <div class="pg-bar-wrap"><div class="pg-bar-fill" id="pgBarFill"></div></div>
+    <div class="pg-demo" aria-hidden="true">✋</div>
+    <ul class="pg-tips">
+      <li>Centre your hand in the camera frame</li>
+      <li>Keep your arm relaxed, elbow down</li>
+      <li>Aim for 30–50 cm from the camera</li>
+    </ul>
+    <div class="pg-footer">
+      <span class="pg-countdown" id="pgCountdown">Starting in 3…</span>
+      <button class="btn btn-ghost btn-sm" onclick="dismissPositioningGuide()">Got it</button>
+    </div>
+  </div>
+</div>
 
 <!-- ── Theme toggle ───────────────────────────────────────────── -->
 <script>
@@ -543,8 +841,11 @@
       instruction: "Spread your hand as wide as you can, extending all fingers fully.",
       detail:      "Keep your wrist still and your palm facing the camera.",
       targetLabel: "Target ≤ 0.20",
+      target:      0.20,
       isInZone:    (v) => v <= 0.25,
       guidance:    (v) => v > 0.25 ? "Open your hand wider" : "In range — hold steady!",
+      isRecordable:  (v) => v <= 0.35,
+      outOfRangeMsg: "Open your hand wider",
     },
     {
       id:          "mid_flexion",
@@ -552,8 +853,11 @@
       instruction: "Curl your fingers halfway — aim for a relaxed half-grip.",
       detail:      "Your palm stays flat while your fingers bend to roughly 90°.",
       targetLabel: "Target ≈ 0.50",
+      target:      0.50,
       isInZone:    (v) => v >= 0.35 && v <= 0.65,
       guidance:    (v) => v < 0.35 ? "Curl your fingers more" : v > 0.65 ? "Open your hand a little" : "In range — hold steady!",
+      isRecordable:  (v) => v >= 0.3 && v <= 0.7,
+      outOfRangeMsg: "Adjust your hand position",
     },
     {
       id:          "full_fist",
@@ -561,8 +865,11 @@
       instruction: "Close your hand into the tightest fist you can comfortably make.",
       detail:      "Bring your fingertips toward your palm without straining.",
       targetLabel: "Target ≥ 0.80",
+      target:      0.80,
       isInZone:    (v) => v >= 0.75,
       guidance:    (v) => v < 0.75 ? "Close your fist more" : "In range — hold steady!",
+      isRecordable:  (v) => v >= 0.55,
+      outOfRangeMsg: "Try to close your hand further",
     },
   ];
 
@@ -578,6 +885,7 @@
   let attemptsDone   = 0;          // recorded attempts for current exercise (0–3)
   let recordedAttempts = [];       // [{closure, hold_s}, …]
   const allResults   = [];         // one entry per exercise
+  let skipReason     = null;       // "pain" | "range" | null
 
   // Hold detection
   let isHolding   = false;
@@ -585,11 +893,23 @@
   let holdSeconds = 0;
   let bestHold    = 0;             // highest hold achieved this exercise; never resets mid-exercise
   let lostFrames  = 0;
-  const GRACE_FRAMES = 8;          // ~264 ms before resetting current hold
+  const GRACE_FRAMES        = 8;     // ~264 ms before resetting current hold
+  const HOLD_REQUIRED       = 2;     // seconds of in-zone hold before Record activates
+  const STABILITY_SIZE      = 15;    // rolling buffer depth (~0.5 s at 33 ms poll)
+  const STABILITY_THRESHOLD = 0.08;  // max std dev to consider the hand stable
 
   // Camera
-  let polling        = false;
-  let currentClosure = null;
+  let polling          = false;
+  let currentClosure   = null;
+  let handDetected     = false;
+  let stabilityBuffer  = [];        // rolling window of last STABILITY_SIZE closure values
+
+  // Hand-lost detection
+  const NO_HAND_THRESHOLD  = 60;   // frames ≈ 2 s at 33 ms
+  let noHandFrames         = 0;
+  let handLostActive       = false;
+  let handLostBeepPlayed   = false;
+  let holdPauseMs          = 0;    // when hold was paused, to re-anchor holdStart
 
   /* ── DOM refs ─────────────────────────────────────────────────── */
   const elExProgress    = document.getElementById("exProgress");
@@ -607,7 +927,11 @@
   const elHoldLiveDot    = document.getElementById("holdLiveDot");
   const elAttemptDots   = document.getElementById("attemptDots");
   const elAttemptCount  = document.getElementById("attemptCounter");
-  const btnRecord       = document.getElementById("btnRecord");
+  const btnRecord           = document.getElementById("btnRecord");
+  const elHoldProgressWrap  = document.getElementById("holdProgressWrap");
+  const elHoldProgressFill  = document.getElementById("holdProgressFill");
+  const elHoldProgressLabel = document.getElementById("holdProgressLabel");
+  const elRecordInlineMsg   = document.getElementById("recordInlineMsg");
 
   const elPainCheck     = document.getElementById("painCheck");
   const elPainBig       = document.getElementById("painBig");
@@ -615,13 +939,62 @@
   const elPainSlider    = document.getElementById("painSlider");
   const btnNext         = document.getElementById("btnNext");
 
+  const elSkipCard      = document.getElementById("skipCard");
+  const elSkipTrigger   = document.getElementById("btnSkipTrigger");
+  const elSkipPainPill  = document.getElementById("skipPainPill");
+  const elSkipRangePill = document.getElementById("skipRangePill");
+  const btnSkipConfirm  = document.getElementById("btnSkipConfirm");
+  const btnCancelSkip   = document.getElementById("btnCancelSkip");
+
   const cameraFeed      = document.getElementById("cameraFeed");
   const cameraContainer = document.getElementById("cameraContainer");
   const camInit         = document.getElementById("camInit");
   const camInitText     = document.getElementById("camInitText");
+
+  // Canvas-based camera feed — double-buffered to avoid WebView2 repaint artifacts
+  const _feedCtx = cameraFeed.getContext("2d");
+  const _feedImg = new Image();
+  _feedImg.addEventListener("load", function () {
+    const cw = cameraFeed.offsetWidth  || 640;
+    const ch = cameraFeed.offsetHeight || 480;
+    if (cameraFeed.width !== cw || cameraFeed.height !== ch) {
+      cameraFeed.width  = cw;
+      cameraFeed.height = ch;
+    }
+    const iw = _feedImg.naturalWidth, ih = _feedImg.naturalHeight;
+    if (!iw || !ih) return;
+    const scale = Math.max(cw / iw, ch / ih);
+    const dw = iw * scale, dh = ih * scale;
+    _feedCtx.drawImage(_feedImg, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  });
   const statusPill      = document.getElementById("statusPill");
   const statusText      = document.getElementById("statusText");
   const cameraHint      = document.getElementById("cameraHint");
+
+  /* ── Stability helpers ────────────────────────────────────────── */
+  function stdDev(arr) {
+    if (arr.length < 2) return 1;
+    const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+    const variance = arr.reduce((sum, v) => sum + (v - mean) ** 2, 0) / arr.length;
+    return Math.sqrt(variance);
+  }
+
+  function bufferAverage() {
+    if (!stabilityBuffer.length) return null;
+    return stabilityBuffer.reduce((a, b) => a + b, 0) / stabilityBuffer.length;
+  }
+
+  function updateStabilityDots() {
+    const el = document.getElementById("stabilityDots");
+    if (!el) return;
+    const full   = stabilityBuffer.length >= STABILITY_SIZE;
+    const stable = full && stdDev(stabilityBuffer) < STABILITY_THRESHOLD;
+    el.innerHTML = Array.from({ length: STABILITY_SIZE }, (_, i) => {
+      const filled = i < stabilityBuffer.length;
+      const cls    = filled ? (stable ? "stability-dot stable" : "stability-dot filled") : "stability-dot";
+      return `<div class="${cls}"></div>`;
+    }).join("");
+  }
 
   /* ── Render exercise stepper ──────────────────────────────────── */
   function renderStepper() {
@@ -663,11 +1036,12 @@
     currentClosure = null;
 
     // Reset hold state
-    isHolding   = false;
-    holdStart   = null;
-    holdSeconds = 0;
-    bestHold    = 0;
-    lostFrames  = 0;
+    isHolding       = false;
+    holdStart       = null;
+    holdSeconds     = 0;
+    bestHold        = 0;
+    lostFrames      = 0;
+    stabilityBuffer = [];
 
     const ex = EXERCISES[idx];
     elExName.textContent        = ex.name;
@@ -682,6 +1056,7 @@
 
     renderStepper();
     renderAttemptDots();
+    hideSkipCard();
     showRecordingPhase();
 
     // Reset closure + hold display
@@ -693,6 +1068,13 @@
     elCurrentHoldVal.classList.remove("live");
     elBestHoldVal.textContent = "0.0s";
     elHoldLiveDot.classList.remove("active");
+    handDetected = false;
+    btnRecord.disabled = true;
+    elHoldProgressFill.style.width = "0%";
+    elHoldProgressWrap.classList.remove("ready");
+    elHoldProgressLabel.textContent = "Hold for 2s…";
+    elRecordInlineMsg.textContent = "";
+    updateStabilityDots();
   }
 
   /* ── Phase toggling ───────────────────────────────────────────── */
@@ -704,6 +1086,59 @@
   function showPainCheckPhase() {
     elRecording.classList.add("hidden");
     elPainCheck.classList.add("visible");
+  }
+
+  /* ── Skip card ────────────────────────────────────────────────── */
+  function showSkipCard() {
+    elRecording.classList.add("hidden");
+    elSkipCard.style.display = "block";
+  }
+
+  function hideSkipCard() {
+    elSkipCard.style.display = "none";
+    elRecording.classList.remove("hidden");
+    skipReason = null;
+    elSkipPainPill.classList.remove("skip-selected");
+    elSkipRangePill.classList.remove("skip-selected");
+    btnSkipConfirm.disabled = true;
+  }
+
+  function selectSkipReason(reason) {
+    skipReason = reason;
+    elSkipPainPill.classList.toggle("skip-selected", reason === "pain");
+    elSkipRangePill.classList.toggle("skip-selected", reason === "range");
+    btnSkipConfirm.disabled = false;
+  }
+
+  async function confirmSkip() {
+    if (!skipReason) return;
+
+    allResults.push({
+      exercise:          EXERCISES[exIdx].id,
+      attempts:          [],
+      pain_after:        skipReason === "pain" ? 10 : 0,
+      skipped:           true,
+      skip_reason:       skipReason,
+      avg_closure:       null,
+      max_hold_duration: 0.0,
+    });
+
+    const reason = skipReason;
+    skipReason = null;
+
+    if (exIdx < EXERCISES.length - 1) {
+      loadExercise(exIdx + 1);
+    } else {
+      btnSkipConfirm.disabled    = true;
+      btnSkipConfirm.textContent = "Saving…";
+      polling = false;
+      handLostActive = false;
+      document.getElementById("handLostBanner").classList.remove("show");
+      document.getElementById("cameraContainer").classList.remove("hand-lost-glow");
+      try { await window.pywebview.api.stop_camera(); } catch (_) {}
+      await api.saveAssessmentResult({ exercises: allResults });
+      api.navigate("assessment_results");
+    }
   }
 
   /* ── Closure display update ───────────────────────────────────── */
@@ -729,6 +1164,7 @@
 
   /* ── Hold timer update (called each frame) ────────────────────── */
   function updateHoldState(closure) {
+    if (handLostActive) return;   // freeze hold timer while hand is out of view
     const ex     = EXERCISES[exIdx];
     const inZone = closure !== null && closure !== undefined && ex.isInZone(parseFloat(closure));
 
@@ -759,21 +1195,80 @@
         // bestHold intentionally not reset — persists for the full exercise
       }
     }
+    updateRecordBtn();
+  }
+
+  /* ── Record button gate ───────────────────────────────────────── */
+  function updateRecordBtn() {
+    const ex          = EXERCISES[exIdx];
+    const heldEnough  = holdSeconds >= HOLD_REQUIRED;
+    const bufferFull  = stabilityBuffer.length >= STABILITY_SIZE;
+    const stable      = bufferFull && stdDev(stabilityBuffer) < STABILITY_THRESHOLD;
+    const avg         = bufferAverage();
+    const inRecordRange = avg !== null && ex.isRecordable(avg);
+    const canRecord   = handDetected && heldEnough && stable && inRecordRange;
+
+    btnRecord.disabled = !canRecord;
+
+    // Inline message: stability takes priority over range
+    if (handDetected && heldEnough) {
+      if (!stable) {
+        elRecordInlineMsg.textContent = "Keep your hand steady…";
+      } else if (!inRecordRange) {
+        elRecordInlineMsg.textContent = ex.outOfRangeMsg;
+      } else {
+        elRecordInlineMsg.textContent = "";
+      }
+    } else {
+      elRecordInlineMsg.textContent = "";
+    }
+
+    // Hold progress bar
+    if (handDetected) {
+      const pct = Math.min(holdSeconds / HOLD_REQUIRED, 1) * 100;
+      elHoldProgressFill.style.width = pct + "%";
+      elHoldProgressWrap.classList.toggle("ready", canRecord);
+      if (!heldEnough) {
+        elHoldProgressLabel.textContent = "Hold for " + Math.max(0, HOLD_REQUIRED - holdSeconds).toFixed(1) + "s…";
+      } else if (canRecord) {
+        elHoldProgressLabel.textContent = "Ready to record!";
+      } else {
+        elHoldProgressLabel.textContent = "Stabilising…";
+      }
+    } else {
+      elHoldProgressFill.style.width = "0%";
+      elHoldProgressWrap.classList.remove("ready");
+      elHoldProgressLabel.textContent = "Hold for 2s…";
+    }
   }
 
   /* ── Record attempt ───────────────────────────────────────────── */
   btnRecord.addEventListener("click", () => {
+    const ex         = EXERCISES[exIdx];
+    const bufferFull = stabilityBuffer.length >= STABILITY_SIZE;
+    const stable     = bufferFull && stdDev(stabilityBuffer) < STABILITY_THRESHOLD;
+    const avg        = bufferAverage();
+    const inRecordRange = avg !== null && ex.isRecordable(avg);
+
+    if (!handDetected || holdSeconds < HOLD_REQUIRED || !stable || !inRecordRange) {
+      if (!stable)          elRecordInlineMsg.textContent = "Keep your hand steady…";
+      else if (!inRecordRange) elRecordInlineMsg.textContent = ex.outOfRangeMsg;
+      else                  elRecordInlineMsg.textContent = "Hold the position steady for a moment first";
+      return;
+    }
+    elRecordInlineMsg.textContent = "";
     recordedAttempts.push({
-      closure:  currentClosure !== null ? parseFloat(currentClosure).toFixed(2) : null,
-      hold_s:   parseFloat(holdSeconds.toFixed(1)),
+      closure: parseFloat(avg.toFixed(2)),   // buffer average, not instantaneous
+      hold_s:  parseFloat(holdSeconds.toFixed(1)),
     });
     attemptsDone++;
 
     // Reset current hold for next attempt (bestHold persists)
-    isHolding   = false;
-    holdStart   = null;
-    holdSeconds = 0;
-    lostFrames  = 0;
+    isHolding       = false;
+    holdStart       = null;
+    holdSeconds     = 0;
+    lostFrames      = 0;
+    stabilityBuffer = [];
     elCurrentHoldVal.textContent = "0.0s";
     elCurrentHoldVal.classList.remove("live");
     elHoldLiveDot.classList.remove("active");
@@ -813,9 +1308,12 @@
       btnNext.disabled    = true;
       btnNext.textContent = "Saving…";
       polling = false;
+      handLostActive = false;
+      document.getElementById("handLostBanner").classList.remove("show");
+      document.getElementById("cameraContainer").classList.remove("hand-lost-glow");
       try { await window.pywebview.api.stop_camera(); } catch (_) {}
       await api.saveAssessmentResult({ exercises: allResults });
-      api.navigate("plan");
+      api.navigate("assessment_results");
     }
   });
 
@@ -832,7 +1330,7 @@
     const jpeg = result.jpeg_b64 || result.frame;
     if (jpeg) {
       if (!cameraFeed.classList.contains("visible")) revealFeed();
-      cameraFeed.src = "data:image/jpeg;base64," + jpeg;
+      _feedImg.src = "data:image/jpeg;base64," + jpeg;
     }
 
     // Hand detection status pill
@@ -846,13 +1344,139 @@
       cameraHint.textContent = "Keep your hand centred in frame";
     }
 
+    handDetected = !!result.hand_detected;
+
+    // ── Hand-lost frame counter ──────────────────────────────────
+    if (result.hand_detected) {
+      if (handLostActive) onHandFound();
+      noHandFrames = 0;
+    } else {
+      noHandFrames++;
+      if (noHandFrames >= NO_HAND_THRESHOLD && !handLostActive && phase === "recording") {
+        onHandLost();
+      }
+    }
+
     // Only update closure if in recording phase
     if (phase === "recording") {
       const closure = result.hand_detected ? (result.raw_closure ?? result.learned_closure ?? null) : null;
       currentClosure = closure;
+
+      if (closure !== null) {
+        stabilityBuffer.push(parseFloat(closure));
+        if (stabilityBuffer.length > STABILITY_SIZE) stabilityBuffer.shift();
+      } else {
+        stabilityBuffer = [];
+      }
+
       updateClosureDisplay(closure);
       updateHoldState(closure);
+      updateStabilityDots();
     }
+  }
+
+  /* ── Toast helper (assessment page) ──────────────────────────── */
+  function showToast(msg, duration) {
+    const el = document.createElement("div");
+    el.style.cssText =
+      "position:fixed;bottom:1.75rem;left:50%;transform:translateX(-50%) translateY(10px) scale(.9);" +
+      "background:var(--text);color:var(--bg);padding:.45rem 1.05rem;border-radius:999px;" +
+      "font-size:.82rem;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,.18);" +
+      "white-space:nowrap;z-index:600;opacity:0;transition:opacity .2s ease,transform .2s ease;pointer-events:none;";
+    document.body.appendChild(el);
+    el.textContent = msg;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      el.style.opacity = "1";
+      el.style.transform = "translateX(-50%) translateY(0) scale(1)";
+    }));
+    setTimeout(() => {
+      el.style.opacity = "0";
+      el.style.transform = "translateX(-50%) translateY(10px) scale(.9)";
+      setTimeout(() => el.remove(), 250);
+    }, duration || 2400);
+  }
+
+  /* ── Hand-lost handlers ───────────────────────────────────────── */
+  function playAlertBeep() {
+    try {
+      const ctx  = new (window.AudioContext || window.webkitAudioContext)();
+      const osc  = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = "sine";
+      osc.frequency.value = 440;
+      gain.gain.setValueAtTime(0.2, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.3);
+      osc.onended = () => ctx.close();
+    } catch (_) {}
+  }
+
+  function onHandLost() {
+    if (handLostActive) return;
+    handLostActive = true;
+    holdPauseMs    = Date.now();
+    if (!handLostBeepPlayed) { playAlertBeep(); handLostBeepPlayed = true; }
+    document.getElementById("handLostBanner").classList.add("show");
+    document.getElementById("cameraContainer").classList.add("hand-lost-glow");
+    btnRecord.disabled = true;
+  }
+
+  function onHandFound() {
+    if (!handLostActive) return;
+    // Re-anchor holdStart so accumulated hold time is preserved
+    if (isHolding && holdStart !== null && holdSeconds > 0) {
+      holdStart = Date.now() - holdSeconds * 1000;
+    }
+    handLostActive     = false;
+    handLostBeepPlayed = false;
+    noHandFrames       = 0;
+    holdPauseMs        = 0;
+    document.getElementById("handLostBanner").classList.remove("show");
+    document.getElementById("cameraContainer").classList.remove("hand-lost-glow");
+    showToast("Hand detected — resuming", 1200);
+  }
+
+  /* ── Positioning guide ────────────────────────────────────────── */
+  let pgTimer = null;
+
+  function showPositioningGuide() {
+    const overlay = document.getElementById("positioningGuide");
+    const countEl = document.getElementById("pgCountdown");
+    const barEl   = document.getElementById("pgBarFill");
+    if (!overlay) return;
+    overlay.style.display = "flex";
+    let secondsLeft = 3;
+    function tick() {
+      if (secondsLeft === 0) { dismissPositioningGuide(); return; }
+      if (countEl) countEl.textContent = `Starting in ${secondsLeft}…`;
+      if (barEl) {
+        barEl.style.transition = "none";
+        barEl.style.width = ((3 - secondsLeft) / 3 * 100) + "%";
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          barEl.style.transition = "";
+          barEl.style.width = ((3 - secondsLeft + 1) / 3 * 100) + "%";
+        }));
+      }
+      secondsLeft--;
+      pgTimer = setTimeout(tick, 1000);
+    }
+    tick();
+  }
+
+  function dismissPositioningGuide() {
+    if (pgTimer) { clearTimeout(pgTimer); pgTimer = null; }
+    const overlay = document.getElementById("positioningGuide");
+    if (overlay) overlay.style.display = "none";
+  }
+
+  async function maybeShowPositioningGuide() {
+    try {
+      const r = await window.pywebview.api.get_session_history();
+      if (r?.ok && r.total_sessions === 0) showPositioningGuide();
+    } catch (_) {}
   }
 
   function schedulePoll() {
@@ -864,8 +1488,29 @@
       });
   }
 
+  async function initCameraSelector() {
+    try {
+      const res = await window.pywebview.api.get_cameras();
+      if (!res.ok || !res.cameras || !res.cameras.length) return;
+      const sel = document.getElementById("cameraSelect");
+      sel.innerHTML = res.cameras.map(c =>
+        `<option value="${c.index}">${c.label}</option>`
+      ).join("");
+    } catch (_) {}
+  }
+
+  async function switchCamera(val) {
+    polling = false;
+    try {
+      await window.pywebview.api.switch_camera(parseInt(val, 10));
+    } catch (_) {}
+    polling = true;
+    schedulePoll();
+  }
+
   async function initCamera() {
     camInitText.textContent = "Starting camera…";
+    await initCameraSelector();
     try {
       await window.pywebview.api.start_camera();
     } catch (_) {
@@ -875,9 +1520,17 @@
       return;
     }
     camInitText.textContent = "Waiting for your hand…";
+    maybeShowPositioningGuide();   // show on first-ever session only
     polling = true;
     schedulePoll();
   }
+
+  /* ── Skip event listeners ────────────────────────────────────── */
+  elSkipTrigger.addEventListener("click", showSkipCard);
+  elSkipPainPill.addEventListener("click", () => selectSkipReason("pain"));
+  elSkipRangePill.addEventListener("click", () => selectSkipReason("range"));
+  btnSkipConfirm.addEventListener("click", confirmSkip);
+  btnCancelSkip.addEventListener("click", (e) => { e.preventDefault(); hideSkipCard(); });
 
   /* ── Boot ─────────────────────────────────────────────────────── */
   loadExercise(0);
@@ -887,6 +1540,37 @@
     window.removeEventListener("pywebviewready", initCamera);
     initCamera();
   }
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

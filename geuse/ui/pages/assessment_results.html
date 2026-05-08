@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geuse — Assessment Results</title>
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
+  <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
+  <style>
+    /* ── Page layout ─────────────────────────────────────────────── */
+    .results-main {
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+
+    .results-content {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2.75rem 2rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* ── Loading state ───────────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .page-loader {
+      padding: 5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .65rem;
+      color: var(--text-hint);
+      font-size: .85rem;
+    }
+
+    .spinner-sm {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border-md);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* ── Results header ──────────────────────────────────────────── */
+    .results-header h1 { margin-bottom: .45rem; }
+    .results-header .sub {
+      font-size: .875rem;
+      color: var(--text-hint);
+      max-width: none;
+    }
+
+    /* ── Exercise cards grid ─────────────────────────────────────── */
+    .ex-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: .85rem;
+    }
+
+    .ex-result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .8rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .ex-card-top {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .ex-card-emoji {
+      font-size: 1.25rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .ex-card-label {
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-hint);
+    }
+
+    /* Closure number + bar */
+    .ex-closure-num {
+      font-family: var(--font-serif);
+      font-size: 2.55rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ex-closure-num.good     { color: var(--green);   }
+    .ex-closure-num.moderate { color: var(--warning); }
+    .ex-closure-num.limited  { color: var(--danger);  }
+    .ex-closure-num.none     { color: var(--text-hint); }
+
+    .closure-bar-track {
+      height: 4px;
+      background: var(--border-md);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-top: .4rem;
+    }
+
+    .closure-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width 0.9s var(--ease-out);
+    }
+
+    .closure-bar-fill.good     { background: var(--green);   }
+    .closure-bar-fill.moderate { background: var(--warning); }
+    .closure-bar-fill.limited  { background: var(--danger);  }
+
+    /* Stats */
+    .ex-stats-row {
+      display: flex;
+      gap: 1.1rem;
+      padding-top: .6rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .ex-stat { display: flex; flex-direction: column; gap: .18rem; }
+
+    .ex-stat-lbl {
+      font-size: .68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-hint);
+    }
+
+    .ex-stat-val {
+      font-size: .85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    /* Interpretation pill */
+    .ex-interpretation {
+      font-size: .74rem;
+      font-weight: 600;
+      padding: .28rem .6rem;
+      border-radius: var(--radius-xs);
+      line-height: 1.4;
+      align-self: flex-start;
+    }
+
+    .ex-interpretation.good     { background: var(--green-subtle);          color: var(--green);   }
+    .ex-interpretation.moderate { background: rgba(176, 125, 42, 0.10);     color: var(--warning); }
+    .ex-interpretation.limited  { background: var(--danger-subtle);         color: var(--danger);  }
+
+    /* ── Findings card ────────────────────────────────────────────── */
+    .findings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .findings-card p {
+      font-size: .9rem;
+      line-height: 1.75;
+      color: var(--text-muted);
+      max-width: none;
+      margin-top: .6rem;
+    }
+
+    /* ── Goals ────────────────────────────────────────────────────── */
+    .goals-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+
+    .goal-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .85rem 1.1rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .goal-week-pill {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--accent);
+      background: var(--accent-subtle);
+      border-radius: var(--radius-xs);
+      padding: .2rem .6rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+      min-width: 4rem;
+      text-align: center;
+    }
+
+    .goal-text {
+      font-size: .875rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* ── Skipped exercise cards ──────────────────────────────────── */
+    .ex-result-card--pain {
+      border-color: rgba(196, 80, 60, 0.30);
+      background: rgba(196, 80, 60, 0.03);
+    }
+    .ex-result-card--range {
+      border-color: rgba(196, 135, 42, 0.35);
+      background: rgba(196, 135, 42, 0.04);
+    }
+    .ex-skip-badge {
+      font-size: .72rem;
+      font-weight: 700;
+      padding: .28rem .6rem;
+      border-radius: var(--radius-xs);
+      line-height: 1.4;
+      align-self: flex-start;
+    }
+    .ex-skip-badge.pain {
+      background: var(--danger-subtle);
+      color: var(--danger);
+    }
+    .ex-skip-badge.range {
+      background: rgba(176, 125, 42, 0.10);
+      color: var(--warning);
+    }
+    .ex-skip-note {
+      font-size: .8rem;
+      color: var(--text-hint);
+      line-height: 1.6;
+      margin: 0;
+      padding-top: .55rem;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ── CTA ─────────────────────────────────────────────────────── */
+    .cta-wrap {
+      display: flex;
+      justify-content: center;
+      padding-top: .5rem;
+    }
+
+    .btn-generate { padding: .78rem 2.8rem; font-size: .95rem; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ── Topbar ─────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
+    </div>
+    <div class="step-dots" aria-label="Step 5 of 5">
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot"></div>
+      <div class="step-dot active"></div>
+    </div>
+    <div class="topbar-right">
+      <span class="step-label">Step 5 of 5</span>
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
+    </div>
+  </header>
+
+  <!-- ── Scrollable content ─────────────────────────────────────── -->
+  <main class="results-main">
+
+    <div class="page-loader" id="pageLoader">
+      <div class="spinner-sm"></div>
+      <span>Loading your results…</span>
+    </div>
+
+    <div class="results-content" id="resultsContent" style="display:none;">
+
+      <!-- Heading -->
+      <div class="results-header">
+        <h1>Here's what we found, <span id="userName">there</span></h1>
+        <p class="sub">Based on your assessment today</p>
+      </div>
+
+      <!-- Exercise cards -->
+      <div class="ex-cards-grid" id="exCardsGrid"></div>
+
+      <!-- What this means -->
+      <div class="findings-card">
+        <h3>What this means</h3>
+        <p id="summaryText"></p>
+      </div>
+
+      <!-- Suggested goals -->
+      <div>
+        <h3 style="margin-bottom:.85rem;">Your suggested goals</h3>
+        <div class="goals-list" id="goalsList"></div>
+      </div>
+
+      <!-- CTA -->
+      <div class="cta-wrap">
+        <button class="btn btn-primary btn-generate" id="btnGenerate">Generate my plan</button>
+      </div>
+
+    </div><!-- /#resultsContent -->
+
+  </main>
+
+</div><!-- /.app-shell -->
+
+
+<!-- ── Theme toggle ─────────────────────────────────────────────── -->
+<script>
+  const html        = document.documentElement;
+  const themeToggle = document.getElementById("themeToggle");
+
+  const SUN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="4"/>
+    <line x1="12" y1="2"  x2="12" y2="5"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+    <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+    <line x1="2"  y1="12" x2="5"  y2="12"/>
+    <line x1="19" y1="12" x2="22" y2="12"/>
+    <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+    <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+  </svg>`;
+
+  const MOON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>`;
+
+  function applyTheme(theme) {
+    html.setAttribute("data-theme", theme === "dark" ? "dark" : "light");
+    const isDark = theme === "dark";
+    themeToggle.innerHTML = isDark ? SUN_SVG : MOON_SVG;
+    themeToggle.title = isDark ? "Switch to light mode" : "Switch to dark mode";
+  }
+
+  applyTheme(localStorage.getItem("geuse-theme") || "light");
+
+  themeToggle.addEventListener("click", () => {
+    const next = html.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    localStorage.setItem("geuse-theme", next);
+    applyTheme(next);
+  });
+</script>
+
+
+<!-- ── Results logic ─────────────────────────────────────────────── -->
+<script src="../js/bridge.js"></script>
+<script>
+  const elLoader    = document.getElementById("pageLoader");
+  const elContent   = document.getElementById("resultsContent");
+  const elUserName  = document.getElementById("userName");
+  const elCardsGrid = document.getElementById("exCardsGrid");
+  const elSummary   = document.getElementById("summaryText");
+  const elGoals     = document.getElementById("goalsList");
+  const btnGenerate = document.getElementById("btnGenerate");
+
+  /* ── Build exercise card ─────────────────────────────────────── */
+  function buildExCard(ex) {
+    if (ex.skipped) {
+      const isPain   = ex.skip_reason === "pain";
+      const cardMod  = isPain ? "ex-result-card--pain" : "ex-result-card--range";
+      const badgeMod = isPain ? "pain" : "range";
+      const label    = isPain ? "Skipped — too painful" : "Not yet reachable";
+      const note     = isPain
+        ? "This exercise will be introduced carefully as your pain reduces."
+        : "We have added a modified version to your plan as a starting point.";
+      return `
+        <div class="ex-result-card ${cardMod}">
+          <div class="ex-card-top">
+            <span class="ex-card-emoji">${ex.emoji || ""}</span>
+            <span class="ex-card-label">${ex.name}</span>
+          </div>
+          <span class="ex-skip-badge ${badgeMod}">${label}</span>
+          <p class="ex-skip-note">${note}</p>
+        </div>
+      `;
+    }
+
+    const rating  = ex.rating || "limited";
+    const numText = ex.best_closure !== null && ex.best_closure !== undefined
+      ? parseFloat(ex.best_closure).toFixed(2)
+      : "—";
+    const barPct  = ex.best_closure !== null && ex.best_closure !== undefined
+      ? Math.round(parseFloat(ex.best_closure) * 100)
+      : 0;
+    const painText = ex.pain_after === 0 ? "None" : `${ex.pain_after}/10`;
+
+    return `
+      <div class="ex-result-card">
+        <div class="ex-card-top">
+          <span class="ex-card-emoji">${ex.emoji || ""}</span>
+          <span class="ex-card-label">${ex.name}</span>
+        </div>
+
+        <div>
+          <div class="ex-closure-num ${ex.best_closure !== null ? rating : "none"}">${numText}</div>
+          <div class="closure-bar-track">
+            <div class="closure-bar-fill ${rating}" style="width:0%" data-pct="${barPct}"></div>
+          </div>
+        </div>
+
+        <div class="ex-stats-row">
+          <div class="ex-stat">
+            <span class="ex-stat-lbl">Best hold</span>
+            <span class="ex-stat-val">${parseFloat(ex.best_hold_s).toFixed(1)}s</span>
+          </div>
+          <div class="ex-stat">
+            <span class="ex-stat-lbl">Pain after</span>
+            <span class="ex-stat-val">${painText}</span>
+          </div>
+        </div>
+
+        <span class="ex-interpretation ${rating}">${ex.interpretation}</span>
+      </div>
+    `;
+  }
+
+  /* ── Build goal row ──────────────────────────────────────────── */
+  function buildGoalRow(goal) {
+    return `
+      <div class="goal-row">
+        <span class="goal-week-pill">${goal.label}</span>
+        <span class="goal-text">${goal.goal}</span>
+      </div>
+    `;
+  }
+
+  /* ── Animate bars in after render ────────────────────────────── */
+  function animateBars() {
+    document.querySelectorAll(".closure-bar-fill[data-pct]").forEach((el) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.style.width = el.dataset.pct + "%";
+      }));
+    });
+  }
+
+  /* ── Load data and render ────────────────────────────────────── */
+  async function loadResults() {
+    try {
+      const [profileRes, summaryRes] = await Promise.all([
+        api.getProfile(),
+        api.getAssessmentSummary(),
+      ]);
+
+      const name = profileRes?.profile?.name;
+      if (name) elUserName.textContent = name;
+
+      const exercises = summaryRes?.exercises ?? [];
+
+      // ── All exercises skipped due to pain → warm guidance message ─
+      const allSkipped = exercises.length > 0 && exercises.every(e => e.skipped);
+      if (allSkipped) {
+        elCardsGrid.outerHTML = `
+          <div style="
+            background:var(--surface);border:1px solid var(--border);
+            border-radius:var(--radius);padding:1.75rem 1.75rem;
+            display:flex;flex-direction:column;gap:.85rem;">
+            <h2 style="font-family:var(--font-serif);font-size:1.55rem;font-weight:700;
+              color:var(--text);margin:0;">Let's get you the right support</h2>
+            <p style="font-size:.9rem;color:var(--text-muted);line-height:1.75;max-width:none;margin:0;">
+              All three exercises were too painful to complete today. This tells us your hand needs
+              professional attention before starting a self-guided programme.
+            </p>
+            <p style="font-size:.9rem;color:var(--text-muted);line-height:1.75;max-width:none;margin:0;">
+              We recommend consulting a qualified physiotherapist or hand therapist who can provide
+              hands-on treatment and a clinically supervised programme tailored to your current condition.
+            </p>
+          </div>`;
+
+        // Replace summary text with a warm note
+        document.querySelector(".findings-card").remove();
+
+        // Replace goals with a reassurance note
+        elGoals.innerHTML = `
+          <div class="goal-row">
+            <span class="goal-week-pill">Your goal</span>
+            <span class="goal-text">Seek professional physiotherapy support. When your pain reduces, come back and reassess to unlock camera-tracked exercises.</span>
+          </div>`;
+
+        elLoader.style.display  = "none";
+        elContent.style.display = "flex";
+        return;
+      }
+
+      elCardsGrid.innerHTML = exercises.length
+        ? exercises.map(buildExCard).join("")
+        : '<p style="color:var(--text-hint);font-size:.88rem;">No exercise data recorded.</p>';
+
+      elSummary.textContent = summaryRes?.summary ?? "";
+
+      const goals = summaryRes?.goals ?? [];
+      elGoals.innerHTML = goals.length
+        ? goals.map(buildGoalRow).join("")
+        : "";
+
+      elLoader.style.display  = "none";
+      elContent.style.display = "flex";
+
+      animateBars();
+    } catch (err) {
+      console.error("Failed to load results:", err);
+      elLoader.innerHTML = '<span style="color:var(--danger);font-size:.85rem;">Unable to load your results. Please try again.</span>';
+    }
+  }
+
+  /* ── Generate plan ───────────────────────────────────────────── */
+  btnGenerate.addEventListener("click", async () => {
+    btnGenerate.disabled    = true;
+    btnGenerate.textContent = "Generating…";
+    try {
+      await api.generateAndSavePlan();
+      api.navigate("plan");
+    } catch (_) {
+      btnGenerate.disabled    = false;
+      btnGenerate.textContent = "Generate my plan";
+    }
+  });
+
+  /* ── Boot ────────────────────────────────────────────────────── */
+  window.addEventListener("pywebviewready", loadResults, { once: true });
+  if (window.pywebview?.api) {
+    window.removeEventListener("pywebviewready", loadResults);
+    loadResults();
+  }
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
+</script>
+</body>
+</html>

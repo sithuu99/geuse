@@ -9,6 +9,7 @@ __pycache__/
 assets/geuse.db
 
 .claude/
+CLAUDE.md
 
 # Virtual environments
 .venv/

@@ -17,19 +17,39 @@ import webview
 
 from app.camera import CameraStream
 from app.database import (
+    acknowledge_progression as db_acknowledge_progression,
+    discard_incomplete_session as db_discard_incomplete_session,
+    dismiss_flag as db_dismiss_flag,
+    get_active_flags as db_get_active_flags,
+    get_incomplete_session as db_get_incomplete_session,
+    get_insights as db_get_insights,
     get_latest_assessment,
     get_latest_plan,
+    get_monthly_history as db_get_monthly_history,
     get_progress_data,
+    get_progression_log as db_get_progression_log,
+    get_recovery_day as db_get_recovery_day,
     get_session_history,
+    get_trend_analysis as db_get_trend_analysis,
+    get_unacknowledged_progression,
     get_user,
+    mark_session_completed,
     reset_db,
     save_assessment,
+    save_flag,
     save_plan,
     save_self_report,
     save_session,
+    save_session_checkpoint,
     save_user,
+    seed_demo_data,
 )
-from app.plan import generate_plan
+from app.plan import (
+    apply_progression,
+    generate_assessment_summary,
+    generate_goals,
+    generate_plan,
+)
 
 
 def _ok(**kwargs) -> dict:
@@ -61,7 +81,7 @@ class Api:
         from pathlib import Path
         import threading
         BASE_DIR = Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).parent.parent.resolve()
-        safe_pages = ["welcome", "profile", "self_report", "assessment", "plan", "session", "daily_checkin", "dashboard", "settings", "progress"]
+        safe_pages = ["welcome", "profile", "self_report", "assessment", "assessment_results", "plan", "session", "daily_checkin", "dashboard", "settings", "progress", "edit_profile"]
         if page not in safe_pages:
             return _err(ValueError(f"Unknown page: {page!r}"))
         try:
@@ -70,6 +90,17 @@ class Api:
             # return value to the JS callback before the page navigates away
             # and destroys the current JavaScript context.
             threading.Timer(0.05, webview.windows[0].load_url, args=[url]).start()
+            # Trigger a repaint on the newly loaded page to clear WebView2 checkerboard
+            def _repaint():
+                import time
+                time.sleep(0.5)
+                try:
+                    webview.windows[0].evaluate_js(
+                        "window.dispatchEvent(new Event('resize'))"
+                    )
+                except Exception:
+                    pass
+            threading.Thread(target=_repaint, daemon=True).start()
             return _ok()
         except Exception as exc:
             return _err(exc)
@@ -90,6 +121,22 @@ class Api:
         """Stop the capture thread and release the webcam."""
         try:
             self._camera.stop()
+            return _ok()
+        except Exception as exc:
+            return _err(exc)
+
+    def get_cameras(self) -> dict:
+        """Return list of available camera devices (indices 0–4)."""
+        try:
+            cameras = self._camera.get_cameras()
+            return _ok(cameras=cameras)
+        except Exception as exc:
+            return _err(exc)
+
+    def switch_camera(self, index: int = 0) -> dict:
+        """Stop the current camera and restart with a different device index."""
+        try:
+            self._camera.switch_camera(int(index))
             return _ok()
         except Exception as exc:
             return _err(exc)
@@ -144,6 +191,15 @@ class Api:
         try:
             user = get_user()
             return _ok(profile=user or {})
+        except Exception as exc:
+            return _err(exc)
+
+    def get_last_checkin(self) -> dict:
+        """Return the most recent daily check-in record (pain_level + created_at), or None."""
+        try:
+            from app.database import get_latest_self_report
+            record = get_latest_self_report()
+            return _ok(checkin=record)
         except Exception as exc:
             return _err(exc)
 
@@ -229,7 +285,25 @@ class Api:
                 source_assessment_id=assessment_id,
             )
 
+            plan["id"] = plan_id
             return _ok(plan_id=plan_id, plan=plan)
+        except Exception as exc:
+            return _err(exc)
+
+    def get_assessment_summary(self) -> dict:
+        """
+        Derive per-exercise display data, an overall plain-English summary,
+        and milestone goals from the latest saved assessment.
+        """
+        try:
+            assessment = get_latest_assessment() or {}
+            summary    = generate_assessment_summary(assessment)
+            goals      = generate_goals(assessment)
+            return _ok(
+                exercises=summary["exercises"],
+                summary=summary["summary"],
+                goals=goals,
+            )
         except Exception as exc:
             return _err(exc)
 
@@ -238,6 +312,78 @@ class Api:
         try:
             plan = get_latest_plan()
             return _ok(plan=plan or {})
+        except Exception as exc:
+            return _err(exc)
+
+    # ------------------------------------------------------------------ #
+    # Camera status
+    # ------------------------------------------------------------------ #
+
+    def get_camera_status(self) -> dict:
+        """Return whether the camera is running, stalled, or stopped."""
+        try:
+            return _ok(**self._camera.get_camera_status())
+        except Exception as exc:
+            return _err(exc)
+
+    # ------------------------------------------------------------------ #
+    # Session checkpoints
+    # ------------------------------------------------------------------ #
+
+    def save_checkpoint(
+        self,
+        exercise_index: int,
+        exercises_completed,
+        plan_id=None,
+        session_id=None,
+    ) -> dict:
+        """Upsert an in-progress session checkpoint after each completed exercise."""
+        try:
+            import json as _json
+            sid = save_session_checkpoint(
+                plan_id=int(plan_id) if plan_id else None,
+                exercise_index=int(exercise_index),
+                exercises_completed_json=_json.dumps(exercises_completed),
+                session_id=int(session_id) if session_id else None,
+            )
+            return _ok(session_id=sid)
+        except Exception as exc:
+            return _err(exc)
+
+    def get_incomplete_session(self) -> dict:
+        """Return an unfinished session from the last 24 hours, if one exists."""
+        try:
+            session = db_get_incomplete_session()
+            return _ok(session=session)
+        except Exception as exc:
+            return _err(exc)
+
+    def mark_completed(
+        self,
+        session_id,
+        exercises,
+        pain_before=None,
+        pain_after=None,
+        duration_s=None,
+    ) -> dict:
+        """Finalise a session: store all result data and set status to completed."""
+        try:
+            mark_session_completed(
+                session_id=int(session_id),
+                exercises=exercises,
+                pain_before=int(pain_before) if pain_before is not None else None,
+                pain_after=int(pain_after) if pain_after is not None else None,
+                duration_s=int(duration_s) if duration_s is not None else None,
+            )
+            return _ok()
+        except Exception as exc:
+            return _err(exc)
+
+    def discard_incomplete_session(self, session_id) -> dict:
+        """Delete an abandoned in-progress session so it won't show as resumable."""
+        try:
+            db_discard_incomplete_session(int(session_id))
+            return _ok()
         except Exception as exc:
             return _err(exc)
 
@@ -262,6 +408,29 @@ class Api:
         except Exception as exc:
             return _err(exc)
 
+    def load_demo(self) -> dict:
+        """Seed the database with demo data for Alex Johnson."""
+        try:
+            seed_demo_data()
+            return _ok()
+        except Exception as exc:
+            return _err(exc)
+
+    def is_demo_mode(self) -> dict:
+        """Return whether the current user is the demo account."""
+        try:
+            user = get_user()
+            return _ok(is_demo=bool(user and user.get("name") == "Alex Johnson"))
+        except Exception as exc:
+            return _err(exc)
+
+    def get_recovery_day(self) -> dict:
+        """Return days since the user profile was created (1-indexed)."""
+        try:
+            return _ok(day=db_get_recovery_day())
+        except Exception as exc:
+            return _err(exc)
+
     def get_session_history(self) -> dict:
         """Return session history, pain trend, streak, and totals for the dashboard."""
         try:
@@ -275,6 +444,22 @@ class Api:
         try:
             data = get_progress_data()
             return _ok(**data)
+        except Exception as exc:
+            return _err(exc)
+
+    def get_insights(self) -> dict:
+        """Return insight data for dashboard and progress pages."""
+        try:
+            data = db_get_insights()
+            return _ok(**data)
+        except Exception as exc:
+            return _err(exc)
+
+    def get_monthly_history(self) -> dict:
+        """Return session data grouped by month, newest first."""
+        try:
+            months = db_get_monthly_history()
+            return _ok(months=months)
         except Exception as exc:
             return _err(exc)
 
@@ -299,5 +484,89 @@ class Api:
                 duration_s=data.get("duration_s"),
             )
             return _ok(session_id=row_id)
+        except Exception as exc:
+            return _err(exc)
+
+    # ------------------------------------------------------------------ #
+    # Adaptive progression
+    # ------------------------------------------------------------------ #
+
+    def check_progression(self) -> dict:
+        """
+        Evaluate recent session performance and, if all exercises consistently
+        exceed their targets, update the plan and log the changes.
+
+        If unacknowledged progression events already exist (the user has not yet
+        dismissed the notification from a prior run) those are returned as-is
+        without re-evaluating, so the plan is not progressed twice.
+
+        Returns
+        -------
+        ok         : bool
+        progressed : bool
+        changes    : list[str] — human-readable descriptions of what changed
+        """
+        try:
+            pending = get_unacknowledged_progression()
+            if pending:
+                changes = [p["description"] for p in pending if p.get("description")]
+                return _ok(progressed=True, changes=changes)
+
+            plan   = get_latest_plan()
+            result = apply_progression(user_id=1, plan=plan)
+            return _ok(progressed=result["progressed"], changes=result["changes"])
+        except Exception as exc:
+            return _err(exc)
+
+    def acknowledge_progression(self) -> dict:
+        """Mark all pending progression events as acknowledged (notification dismissed)."""
+        try:
+            db_acknowledge_progression()
+            return _ok()
+        except Exception as exc:
+            return _err(exc)
+
+    def get_progression_log(self) -> dict:
+        """Return the full plan progression history for the progress page."""
+        try:
+            entries = db_get_progression_log()
+            return _ok(entries=entries)
+        except Exception as exc:
+            return _err(exc)
+
+    # ------------------------------------------------------------------ #
+    # Trend analysis / health flags
+    # ------------------------------------------------------------------ #
+
+    def get_trend_analysis(self) -> dict:
+        """
+        Compute pain/closure cross-validation flags from recent sessions.
+        Persists each detected flag and returns active flags with DB ids.
+        """
+        try:
+            analysis = db_get_trend_analysis()
+            for flag_type in analysis["flags"]:
+                save_flag(1, flag_type)
+            active = db_get_active_flags()
+            return _ok(
+                flags=analysis["flags"],
+                active_flags=active,
+                analysis=analysis,
+            )
+        except Exception as exc:
+            return _err(exc)
+
+    def get_active_flags(self) -> dict:
+        """Return all non-dismissed health flags."""
+        try:
+            return _ok(flags=db_get_active_flags())
+        except Exception as exc:
+            return _err(exc)
+
+    def dismiss_flag(self, flag_id) -> dict:
+        """Mark a health flag as dismissed (hides it for 7 days on next detection)."""
+        try:
+            db_dismiss_flag(int(flag_id))
+            return _ok()
         except Exception as exc:
             return _err(exc)

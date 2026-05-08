@@ -38,4 +38,10 @@ if __name__ == "__main__":
         resizable=True,
     )
 
-    webview.start(func=window.maximize, debug=False)
+    def on_shown():
+        import time
+        window.maximize()
+        time.sleep(0.3)
+        window.evaluate_js("document.body.style.zoom='1'")
+
+    webview.start(on_shown, debug=False)

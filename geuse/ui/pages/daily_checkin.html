@@ -6,10 +6,8 @@
   <title>Geuse — Daily Check-In</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
-
     .page { height: 100%; overflow-y: auto; }
 
     /* ── Greeting ─────────────────────────────────────────────── */
@@ -83,6 +81,165 @@
       font-weight: 500;
     }
 
+    /* ── Progression banner ──────────────────────────────────── */
+    .progression-banner {
+      display: none;
+      flex-direction: column;
+      gap: .75rem;
+      margin-top: 1.5rem;
+      background: var(--surface);
+      border: 1.5px solid var(--green);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.4rem;
+      box-shadow: 0 0 0 3px var(--green-subtle);
+    }
+
+    .progression-banner.visible { display: flex; }
+
+    .progression-banner-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .progression-banner-title {
+      font-size: .95rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .progression-banner-dismiss {
+      font-size: .75rem;
+      font-weight: 600;
+      color: var(--text-hint);
+      background: none;
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-full);
+      padding: .2rem .7rem;
+      cursor: pointer;
+      transition: color 0.15s ease, border-color 0.15s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .progression-banner-dismiss:hover {
+      color: var(--text);
+      border-color: var(--border);
+    }
+
+    .progression-changes {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      padding-left: .1rem;
+    }
+
+    .progression-change-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .55rem;
+      font-size: .84rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .progression-change-item::before {
+      content: "↑";
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: .05em;
+    }
+
+    /* ── Previous check-in reference ─────────────────────────── */
+    #prevCheckinRef {
+      font-size: .82rem;
+      font-weight: 500;
+      text-align: center;
+      min-height: 1.3em;
+      margin-bottom: .5rem;
+      transition: color 0.15s ease;
+    }
+    #prevCheckinRef.pain-low  { color: var(--green);   }
+    #prevCheckinRef.pain-mid  { color: var(--warning);  }
+    #prevCheckinRef.pain-high { color: var(--danger);   }
+
+    #firstCheckinNote {
+      font-size: .82rem;
+      color: var(--text-hint);
+      text-align: center;
+      line-height: 1.55;
+      margin-bottom: .5rem;
+    }
+
+    /* ── Slider track wrapper (holds the prev-pain tick) ──────── */
+    .slider-track-wrap {
+      position: relative;
+    }
+
+    #prevPainTick {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 3px;
+      height: 14px;
+      border-radius: 2px;
+      background: var(--text-hint);
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    /* ── Live pain comparison ─────────────────────────────────── */
+    #painComparison {
+      font-size: .8rem;
+      font-weight: 600;
+      text-align: center;
+      min-height: 1.15em;
+      margin-top: .35rem;
+      transition: color 0.15s ease;
+    }
+
+    /* ── Health flag alert cards ─────────────────────────────── */
+    .flag-alert {
+      border-radius: var(--radius);
+      border-width: 1.5px;
+      border-style: solid;
+      padding: .9rem 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+    }
+
+    .flag-alert-amber {
+      background: var(--warm-dim);
+      border-color: var(--warm-border);
+    }
+
+    .flag-alert-red {
+      background: rgba(220,38,38,.06);
+      border-color: rgba(220,38,38,.35);
+    }
+
+    .flag-alert-title {
+      font-size: .86rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .flag-alert-body {
+      font-size: .82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .flag-alert-actions {
+      display: flex;
+      gap: .6rem;
+      flex-wrap: wrap;
+      margin-top: .15rem;
+    }
+
     /* ── Footer ───────────────────────────────────────────────── */
     .page-footer {
       padding: 2rem 0 1rem;
@@ -106,11 +263,10 @@
 
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
     <div></div>
     <div class="topbar-right">
-      <button class="btn btn-ghost btn-sm" id="btnProfile" title="Edit profile">Profile</button>
       <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
       <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
@@ -125,10 +281,23 @@
         <h1 class="greeting-heading" id="greetingHeading">Ready to practise?</h1>
       </div>
 
+      <!-- Progression notification (shown when plan was just updated) -->
+      <div class="progression-banner" id="progressionBanner">
+        <div class="progression-banner-header">
+          <span class="progression-banner-title">Your plan has been updated</span>
+          <button class="progression-banner-dismiss" id="btnDismissProgression">Dismiss</button>
+        </div>
+        <div class="progression-changes" id="progressionChanges"></div>
+      </div>
+
       <div class="pain-card card mt-4">
         <p class="text-hint text-xs font-semibold" style="text-transform:uppercase; letter-spacing:.07em; margin-bottom:.75rem;">
           Pain level right now
         </p>
+
+        <!-- Previous check-in reference (populated by JS) -->
+        <div id="prevCheckinRef"></div>
+        <div id="firstCheckinNote" style="display:none;"></div>
 
         <div class="pain-display">
           <span class="pain-number level-low" id="painNumber">0</span>
@@ -136,18 +305,28 @@
         </div>
 
         <div class="slider-row">
-          <input
-            type="range"
-            id="painSlider"
-            min="0" max="10" value="0" step="1"
-            aria-label="Pain level 0 to 10"
-          />
+          <!-- Wrapper carries the previous-pain tick mark -->
+          <div class="slider-track-wrap">
+            <input
+              type="range"
+              id="painSlider"
+              min="0" max="10" value="0" step="1"
+              style="display:block;width:100%;"
+              aria-label="Pain level 0 to 10"
+            />
+            <div id="prevPainTick" style="display:none;"></div>
+          </div>
           <div class="slider-labels">
             <span>No pain</span>
             <span>Severe</span>
           </div>
+          <!-- Live comparison (populated by JS when prev record exists) -->
+          <div id="painComparison" style="display:none;"></div>
         </div>
       </div>
+
+      <!-- Health flag alert cards (injected by JS after trend analysis) -->
+      <div id="flagAlertsWrap" style="display:none;flex-direction:column;gap:.6rem;margin-top:1.5rem;"></div>
 
       <div class="page-footer">
         <button class="btn btn-primary btn-full btn-lg" id="btnStart">
@@ -221,6 +400,60 @@
   const painNumber   = document.getElementById("painNumber");
   const painDesc     = document.getElementById("painDescriptor");
 
+  let prevPainLevel = null;  // set after get_last_checkin resolves
+
+  /* ── Helpers ─────────────────────────────────────────────── */
+  function painLevelClass(v) {
+    return v <= 3 ? "pain-low" : v <= 6 ? "pain-mid" : "pain-high";
+  }
+
+  function fmtCheckinDate(isoStr) {
+    try {
+      const d = new Date(isoStr.replace(" ", "T"));
+      const now = new Date();
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const sameDay = (a, b) =>
+        a.getDate() === b.getDate() && a.getMonth() === b.getMonth() &&
+        a.getFullYear() === b.getFullYear();
+      if (sameDay(d, now))        return "Today";
+      if (sameDay(d, yesterday))  return "Yesterday";
+      return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+    } catch (_) { return isoStr ? isoStr.slice(0, 10) : ""; }
+  }
+
+  function positionTick(value) {
+    const tick = document.getElementById("prevPainTick");
+    if (!tick) return;
+    // Use pixel measurement when available so the tick aligns with the thumb,
+    // accounting for the browser's ~8 px thumb inset on each end.
+    const w = slider.offsetWidth;
+    if (w > 0) {
+      const thumbHalf = 8;
+      tick.style.left = (thumbHalf + (value / 10) * (w - 16)) + "px";
+    } else {
+      tick.style.left = (value * 10) + "%";
+    }
+    tick.style.display = "block";
+  }
+
+  function updateComparison(current) {
+    const el = document.getElementById("painComparison");
+    if (!el || prevPainLevel === null) return;
+    el.style.display = "block";
+    if (current === prevPainLevel) {
+      el.textContent  = "Same as last time";
+      el.style.color  = "var(--text-hint)";
+    } else if (current < prevPainLevel) {
+      el.textContent  = "↓  Better than last time";
+      el.style.color  = "var(--green)";
+    } else {
+      el.textContent  = "↑  Higher than last time";
+      el.style.color  = current > 6 ? "var(--danger)" : "var(--warning)";
+    }
+  }
+
+  /* ── Pain number + descriptor update ─────────────────────── */
   function updatePain(v) {
     v = parseInt(v, 10);
     painNumber.textContent = v;
@@ -229,10 +462,37 @@
     if      (v <= 3) painNumber.classList.add("level-low");
     else if (v <= 6) painNumber.classList.add("level-mid");
     else             painNumber.classList.add("level-high");
+    if (prevPainLevel !== null) updateComparison(v);
   }
 
   slider.addEventListener("input", () => updatePain(slider.value));
   updatePain(slider.value);
+
+  /* ── Load previous check-in reference ────────────────────── */
+  (async () => {
+    try {
+      const res = await window.pywebview.api.get_last_checkin();
+      if (!res || !res.ok) return;
+
+      const refEl  = document.getElementById("prevCheckinRef");
+      const noteEl = document.getElementById("firstCheckinNote");
+
+      if (res.checkin) {
+        const { pain_level, created_at } = res.checkin;
+        prevPainLevel = pain_level;
+
+        refEl.textContent = `Last time: ${pain_level}/10 · ${fmtCheckinDate(created_at)}`;
+        refEl.className   = painLevelClass(pain_level);
+
+        positionTick(pain_level);
+        updateComparison(parseInt(slider.value, 10));
+      } else {
+        // First-ever check-in
+        noteEl.textContent  = "This is your first check-in — be as honest as possible so we can keep your plan safe.";
+        noteEl.style.display = "block";
+      }
+    } catch (_) { /* non-critical */ }
+  })();
 
   /* ── Load profile to personalise greeting ─────────────────── */
   (async () => {
@@ -246,15 +506,13 @@
     } catch (_) { /* non-critical */ }
   })();
 
-  /* ── Start session ────────────────────────────────────────── */
-  document.getElementById("btnStart").addEventListener("click", async () => {
+  /* ── Start session (shared logic) ────────────────────────── */
+  async function doStart() {
     const btn = document.getElementById("btnStart");
     btn.disabled = true;
     btn.textContent = "Starting…";
-
     const painLevel = parseInt(slider.value, 10);
     localStorage.setItem("geuse-pain-before", painLevel);
-
     try {
       await api.saveDailyCheckin(painLevel);
       api.navigate("dashboard");
@@ -262,16 +520,188 @@
       btn.disabled = false;
       btn.textContent = "Start Today's Session";
     }
-  });
+  }
+
+  document.getElementById("btnStart").addEventListener("click", doStart);
 
   /* ── Navigation shortcuts ────────────────────────────────── */
-  document.getElementById("btnProfile").addEventListener("click", () =>
-    api.navigate("profile")
-  );
-
   document.getElementById("btnRedo").addEventListener("click", () =>
     api.navigate("self_report")
   );
+
+  /* ── Referral check — hide Start button if no exercises in plan ── */
+  (async () => {
+    try {
+      const res = await api.getPlan();
+      if (res?.plan?.referral_required) {
+        const btn  = document.getElementById("btnStart");
+        btn.style.display = "none";
+        const footer = btn.closest(".page-footer") || btn.parentElement;
+        const note = document.createElement("p");
+        note.style.cssText = "font-size:.84rem;color:var(--text-hint);text-align:center;line-height:1.65;";
+        note.textContent = "Complete a new assessment when your pain reduces to generate your rehabilitation plan.";
+        footer.appendChild(note);
+      }
+    } catch (_) {}
+  })();
+
+  /* ── Adaptive progression check ─────────────────────────────── */
+  (function () {
+    const banner  = document.getElementById("progressionBanner");
+    const changes = document.getElementById("progressionChanges");
+    const btnDismiss = document.getElementById("btnDismissProgression");
+
+    function showBanner(changeList) {
+      if (!changeList || changeList.length === 0) return;
+      changes.innerHTML = changeList
+        .map(c => `<div class="progression-change-item">${c}</div>`)
+        .join("");
+      banner.classList.add("visible");
+    }
+
+    async function runProgressionCheck() {
+      try {
+        const res = await window.pywebview.api.check_progression();
+        if (res && res.ok && res.progressed && res.changes && res.changes.length) {
+          showBanner(res.changes);
+        }
+      } catch (_) { /* non-critical */ }
+    }
+
+    btnDismiss.addEventListener("click", async () => {
+      banner.classList.remove("visible");
+      try { await window.pywebview.api.acknowledge_progression(); } catch (_) {}
+    });
+
+    window.addEventListener("pywebviewready", runProgressionCheck, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener("pywebviewready", runProgressionCheck);
+      runProgressionCheck();
+    }
+  }());
+
+  /* ── Health-flag trend analysis ──────────────────────────────── */
+  (function () {
+    const FLAG_DEFS = {
+      inconsistent_pain_closure: {
+        sev: "amber",
+        title: "Movement decreasing despite low pain",
+        msg: "We noticed your hand movement has been decreasing despite low pain reports. Consider reporting pain more accurately so we can adjust your plan.",
+      },
+      high_pain_good_closure: {
+        sev: "red",
+        title: "High pain with improving range of motion",
+        msg: "Your pain levels have been high recently. While your range of motion is improving, pushing through significant pain can cause injury. Consider reducing intensity or consulting a physiotherapist.",
+      },
+      plateau: {
+        sev: "amber",
+        title: "Progress has levelled off",
+        msg: "Your progress has levelled off over the last 5 sessions. It may be time to reassess your plan. Go to Settings to trigger a new assessment.",
+      },
+      rapid_decline: {
+        sev: "red",
+        title: "Significant drop in hand movement",
+        msg: "We noticed a significant drop in your hand movement in your last session. This could indicate a flare-up. Consider resting today and consulting a physiotherapist if pain persists.",
+        twoAction: true,
+      },
+      pain_increasing: {
+        sev: "amber",
+        title: "Pain increasing this week",
+        msg: "Your reported pain has been increasing over the last week. Your plan intensity has been automatically reduced for today’s session.",
+        reducePlan: true,
+      },
+    };
+
+    const SURFACED = Object.keys(FLAG_DEFS);
+
+    function renderFlagAlerts(computedFlags) {
+      const active = (computedFlags || []).filter(f => SURFACED.includes(f));
+      const wrap   = document.getElementById("flagAlertsWrap");
+      if (!active.length) { wrap.style.display = "none"; return; }
+
+      const hasRapid   = active.includes("rapid_decline");
+      const hasPainInc = active.includes("pain_increasing");
+
+      if (hasPainInc) localStorage.setItem("geuse-pain-flag", "pain_increasing");
+      if (hasRapid)   document.getElementById("btnStart").style.display = "none";
+
+      wrap.innerHTML = active.map(function (flagType) {
+        var def = FLAG_DEFS[flagType];
+        if (!def) return "";
+        var isRed  = def.sev === "red";
+        var clsCard = "flag-alert " + (isRed ? "flag-alert-red" : "flag-alert-amber");
+        var actions = "";
+        if (def.twoAction) {
+          actions = '<div class="flag-alert-actions">' +
+            '<button class="btn btn-ghost btn-sm" onclick="flagRestToday()">Rest today — skip session</button>' +
+            '<button class="btn btn-primary btn-sm" onclick="flagContinue()">Continue anyway</button>' +
+            '</div>';
+        }
+        return '<div class="' + clsCard + '">' +
+          '<div class="flag-alert-title">' + def.title + '</div>' +
+          '<div class="flag-alert-body">' + def.msg + '</div>' +
+          actions + '</div>';
+      }).join("");
+
+      wrap.style.display = "flex";
+    }
+
+    window.flagRestToday = async function () {
+      const painLevel = parseInt(document.getElementById("painSlider").value, 10);
+      localStorage.setItem("geuse-pain-before", painLevel);
+      try { await window.pywebview.api.save_daily_checkin(painLevel); } catch (_) {}
+      window.pywebview.api.navigate("dashboard");
+    };
+
+    window.flagContinue = function () {
+      document.getElementById("btnStart").style.display = "";
+      doStart();
+    };
+
+    async function runTrendAnalysis() {
+      try {
+        var res = await window.pywebview.api.get_trend_analysis();
+        if (res && res.ok) renderFlagAlerts(res.flags || []);
+      } catch (_) {}
+    }
+
+    window.addEventListener("pywebviewready", runTrendAnalysis, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener("pywebviewready", runTrendAnalysis);
+      runTrendAnalysis();
+    }
+  }());
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>

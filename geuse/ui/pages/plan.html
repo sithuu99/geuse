@@ -6,219 +6,499 @@
   <title>Geuse — Your Plan</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
+  <link rel="icon" type="image/png" href="../assets/favicon.png" />
   <style>
-    .logo-text { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; letter-spacing: -0.03em; color: var(--text); user-select: none; }
-    .logo-text .s { color: var(--accent); }
-    .page { height: 100%; overflow-y: auto; }
+    /* ── Page layout ─────────────────────────────────────────────── */
+    .plan-main { overflow-y: auto; overflow-x: hidden; }
 
-    /* ── Loading state ────────────────────────────────────────── */
-    .loading-row {
+    .plan-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
       display: flex;
-      align-items: center;
-      gap: .75rem;
-      color: var(--text-muted);
-      font-size: .9rem;
-      margin-top: 2rem;
+      flex-direction: column;
+      gap: 2.25rem;
     }
 
-    .spinner {
+    /* ── Loading ─────────────────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .plan-loader {
+      padding: 5rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: .65rem;
+      color: var(--text-hint);
+      font-size: .85rem;
+    }
+
+    .spinner-sm {
       width: 18px;
       height: 18px;
       border: 2px solid var(--border-md);
       border-top-color: var(--accent);
       border-radius: 50%;
-      transition: none;
-      animation: spin 0.85s linear infinite;
       flex-shrink: 0;
+      animation: spin 0.8s linear infinite;
     }
 
-    /* ── Plan meta stats ──────────────────────────────────────── */
-    .plan-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .75rem;
-      margin-top: 1.5rem;
+    /* ── Section label ───────────────────────────────────────────── */
+    .section-lbl {
+      font-size: .72rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-hint);
+      margin: 0 0 .9rem;
+      max-width: none;
+      display: block;
     }
 
-    .meta-stat {
-      display: flex;
-      flex-direction: column;
-      gap: .2rem;
+    /* ── Plan header ─────────────────────────────────────────────── */
+    .plan-hd h1   { margin-bottom: .35rem; }
+    .plan-hd-sub  { font-size: .82rem; color: var(--text-hint); max-width: none; }
+
+    /* ── Summary card ────────────────────────────────────────────── */
+    .summary-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-sm);
-      padding: .65rem 1rem;
-      min-width: 8rem;
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.5rem;
+      box-shadow: var(--shadow-sm);
     }
 
-    .meta-stat-label {
-      font-size: .7rem;
-      font-weight: 600;
-      letter-spacing: .07em;
+    .summary-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .6rem;
+      margin-bottom: 1.1rem;
+    }
+
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      gap: .18rem;
+      background: var(--surface-muted);
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-sm);
+      padding: .55rem .95rem;
+    }
+
+    .stat-pill-lbl {
+      font-size: .67rem;
+      font-weight: 700;
       text-transform: uppercase;
+      letter-spacing: .07em;
       color: var(--text-hint);
     }
 
-    .meta-stat-value {
-      font-size: 1rem;
+    .stat-pill-val {
+      font-size: .92rem;
       font-weight: 600;
       color: var(--text);
     }
 
-    /* ── Notes box ────────────────────────────────────────────── */
-    .note-box {
-      margin-top: 1.25rem;
-      padding: .9rem 1.1rem;
-      background: var(--accent-subtle);
-      border-left: 3px solid var(--accent);
-      border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-      font-size: .88rem;
+    .summary-rationale {
+      font-size: .875rem;
       color: var(--text-muted);
       line-height: 1.65;
+      max-width: none;
+      border-top: 1px solid var(--border);
+      padding-top: .9rem;
     }
 
-    /* ── Exercise cards ───────────────────────────────────────── */
-    .exercise-list {
-      display: flex;
-      flex-direction: column;
-      gap: .75rem;
-      margin-top: 1.25rem;
-    }
-
-    .exercise-card {
+    /* ── Goals timeline ──────────────────────────────────────────── */
+    .goals-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1.1rem 1.25rem;
-      display: grid;
-      grid-template-columns: 2rem 1fr auto;
-      gap: .75rem;
-      align-items: start;
+      padding: 1.5rem 1.4rem 1.65rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .tl-track {
+      display: flex;
+      align-items: flex-start;
+    }
+
+    .tl-node {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .38rem;
+      flex-shrink: 0;
+    }
+
+    .tl-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      border: 2px solid var(--border-md);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    .tl-node.tl-start .tl-dot {
+      background: var(--accent);
+      border-color: var(--accent);
+      width: 13px;
+      height: 13px;
+    }
+
+    .tl-connector {
+      flex: 1;
+      height: 2px;
+      background: var(--border-md);
+      margin-top: 4px;
+      align-self: flex-start;
+      min-width: 1rem;
+    }
+
+    .tl-week {
+      font-size: .67rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-hint);
+    }
+
+    .tl-node.tl-start .tl-week { color: var(--accent); }
+
+    .tl-goal {
+      font-size: .775rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 9rem;
+      line-height: 1.4;
+    }
+
+    /* ── Exercise cards ──────────────────────────────────────────── */
+    .exercises-list { display: flex; flex-direction: column; gap: .85rem; }
+
+    .ex-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .ex-card-hd {
+      display: flex;
+      align-items: center;
+      gap: .7rem;
+      padding: .85rem 1.2rem;
+      background: var(--surface-muted);
+      border-bottom: 1px solid var(--border);
     }
 
     .ex-num {
-      width: 2rem;
-      height: 2rem;
+      width: 1.65rem;
+      height: 1.65rem;
       border-radius: 50%;
-      background: var(--surface-muted);
-      border: 1px solid var(--border-md);
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-subtle-2);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: .75rem;
+      font-size: .7rem;
       font-weight: 700;
-      color: var(--text-hint);
+      color: var(--accent);
       flex-shrink: 0;
-      margin-top: .1rem;
     }
 
-    .ex-body { min-width: 0; }
+    .ex-emoji { font-size: 1.25rem; line-height: 1; flex-shrink: 0; }
 
     .ex-name {
-      font-weight: 600;
       font-size: .95rem;
+      font-weight: 700;
       color: var(--text);
-      margin-bottom: .25rem;
+      flex: 1;
     }
 
-    .ex-description {
-      font-size: .82rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-      margin-bottom: .6rem;
-    }
-
-    .ex-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: .4rem;
-    }
-
-    .ex-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: .3rem;
-      padding: .2rem .6rem;
-      border-radius: var(--radius-full);
-      font-size: .75rem;
+    .ex-type-badge {
+      font-size: .67rem;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-hint);
+      background: var(--surface);
+      border: 1px solid var(--border-md);
+      border-radius: var(--radius-full);
+      padding: .15rem .55rem;
+      flex-shrink: 0;
+    }
+
+    .ex-card-body {
+      padding: 1rem 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: .85rem;
+    }
+
+    .ex-rationale {
+      font-size: .845rem;
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.55;
+      max-width: none;
+    }
+
+    /* Volume chips */
+    .vol-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    .vol-chip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .12rem;
+      padding: .48rem .75rem;
       background: var(--surface-muted);
       border: 1px solid var(--border-md);
-      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      min-width: 3.5rem;
+      text-align: center;
     }
 
-    .ex-chip.accent {
+    .vol-chip.hi {
       background: var(--accent-subtle);
       border-color: var(--accent-subtle-2);
+    }
+
+    .vol-lbl {
+      font-size: .61rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-hint);
+    }
+
+    .vol-chip.hi .vol-lbl { color: var(--accent); }
+
+    .vol-val {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      font-weight: 700;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .vol-chip.hi .vol-val { color: var(--accent); }
+
+    /* Expect callout */
+    .ex-expect {
+      display: flex;
+      align-items: flex-start;
+      gap: .5rem;
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .65rem .9rem;
+      font-size: .8rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .ex-expect-icon { flex-shrink: 0; color: var(--text-hint); margin-top: .08rem; }
+
+    /* ── Guidelines card ─────────────────────────────────────────── */
+    .guidelines-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .2rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .guideline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: .75rem;
+      padding: .82rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: .875rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    .guideline-item:last-child { border-bottom: none; }
+    .guideline-icon { flex-shrink: 0; color: var(--accent); margin-top: .08rem; }
+
+    /* ── Referral page ───────────────────────────────────────────── */
+    .referral-wrap {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 3rem 2rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    .referral-heading {
+      font-family: var(--font-serif);
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: .5rem;
+    }
+
+    .referral-body {
+      font-size: .9rem;
+      color: var(--text-muted);
+      line-height: 1.75;
+      max-width: none;
+      margin: 0;
+    }
+
+    .referral-warm-card {
+      background: var(--accent-subtle);
+      border: 1px solid var(--accent-subtle-2);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 1.4rem 1.6rem;
+      display: flex;
+      flex-direction: column;
+      gap: .55rem;
+    }
+
+    .referral-warm-heading {
+      font-size: .88rem;
+      font-weight: 700;
       color: var(--accent);
     }
 
-    /* ── Section heading ──────────────────────────────────────── */
-    .section-heading {
-      font-size: .72rem;
-      font-weight: 600;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-      color: var(--text-hint);
-      margin-top: 2rem;
-      margin-bottom: 0;
+    .referral-warm-body {
+      font-size: .84rem;
+      color: var(--text-muted);
+      line-height: 1.7;
+      margin: 0;
     }
 
-    /* ── Footer ───────────────────────────────────────────────── */
-    .page-footer {
-      padding: 2rem 0 1rem;
+    /* ── Footer CTA ──────────────────────────────────────────────── */
+    .plan-footer {
       display: flex;
       gap: .75rem;
+      padding-top: .25rem;
     }
+
   </style>
 </head>
 <body>
 <div class="app-shell">
 
+  <!-- ── Topbar ─────────────────────────────────────────────────── -->
   <header class="topbar">
     <div>
-      <span class="logo-text">geu<span class="s">s</span>e</span>
+      <img src="../assets/logo.png" height="28" alt="Geuse" style="display:block;">
     </div>
-    <div class="step-dots" aria-label="Step 5 of 5">
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot"></div>
-      <div class="step-dot active"></div>
-    </div>
+    <div></div>
     <div class="topbar-right">
-      <span class="step-label">Step 5 of 5</span>
-      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></button>
-      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+      <button class="theme-toggle" onclick="api.navigate('progress')" aria-label="Progress" title="Progress">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/>
+        </svg>
+      </button>
+      <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
     </div>
   </header>
 
-  <div class="page">
-    <nav class="nav">
-      <span>Geuse</span><span class="nav-sep">›</span><span class="nav-active">Your Plan</span>
-    </nav>
+  <!-- ── Scrollable content ─────────────────────────────────────── -->
+  <main class="plan-main">
 
-    <h1>Your Rehabilitation Plan</h1>
-    <p class="text-muted mt-2">Generated from your assessment and check-in. Updated each session.</p>
+    <!-- Loading -->
+    <div class="plan-loader" id="planLoader">
+      <div class="spinner-sm"></div>
+      <span>Loading your plan…</span>
+    </div>
 
-    <div id="planContainer">
-      <div class="loading-row">
-        <div class="spinner"></div>
-        Generating your plan…
+    <!-- Content (revealed after load) -->
+    <div class="plan-content" id="planContent" style="display:none;">
+
+      <!-- ── 1. Page header ──────────────────────────────────────── -->
+      <div class="plan-hd">
+        <h1 id="planTitle">Your rehabilitation plan</h1>
+        <p class="plan-hd-sub" id="planDate"></p>
       </div>
-    </div>
 
-    <div class="page-footer">
-      <button class="btn btn-primary" id="btnSession" disabled>Start Today's Session</button>
-      <button class="btn btn-ghost" onclick="api.navigate('self_report')">Back</button>
-    </div>
-  </div>
+      <!-- ── 2. Plan summary card ───────────────────────────────── -->
+      <div class="summary-card">
+        <div class="summary-stats" id="summaryStats"></div>
+        <p class="summary-rationale" id="summaryRationale"></p>
+      </div>
+
+      <!-- ── 3. Goals timeline ──────────────────────────────────── -->
+      <div id="goalsSection"></div>
+
+      <!-- ── 4. Exercises ───────────────────────────────────────── -->
+      <div>
+        <p class="section-lbl">This week's exercises</p>
+        <div class="exercises-list" id="exercisesList"></div>
+      </div>
+
+      <!-- ── 5. Guidelines ──────────────────────────────────────── -->
+      <div>
+        <p class="section-lbl">Session guidelines</p>
+        <div class="guidelines-card">
+
+          <div class="guideline-item">
+            <svg class="guideline-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Always warm up for 2 minutes before starting — gentle hand shakes and wrist rolls are enough.
+          </div>
+
+          <div class="guideline-item">
+            <svg class="guideline-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            Stop immediately if pain exceeds 7/10. Some mild discomfort during movement is expected — sharp or sudden pain is not.
+          </div>
+
+          <div class="guideline-item">
+            <svg class="guideline-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Rest at least one full day between sessions — recovery is when the real progress happens.
+          </div>
+
+          <div class="guideline-item">
+            <svg class="guideline-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+              <polyline points="17 6 23 6 23 12"/>
+            </svg>
+            Consistency matters more than intensity. Showing up regularly at low effort beats occasional hard sessions every time.
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── 6. Footer CTA ──────────────────────────────────────── -->
+      <div class="plan-footer">
+        <button class="btn btn-primary" id="btnSession" disabled>Start first session</button>
+      </div>
+
+    </div><!-- /#planContent -->
+
+  </main>
 
 </div><!-- /.app-shell -->
 
+
+<!-- ── Theme toggle ─────────────────────────────────────────────── -->
 <script>
-  /* ── Theme toggle ─────────────────────────────────────────────── */
   const html        = document.documentElement;
   const themeToggle = document.getElementById("themeToggle");
 
@@ -256,102 +536,296 @@
   });
 </script>
 
+
+<!-- ── Plan logic ────────────────────────────────────────────────── -->
 <script src="../js/bridge.js"></script>
 <script>
-  const container = document.getElementById("planContainer");
-  const btnSession = document.getElementById("btnSession");
+  /* ── Per-exercise metadata ───────────────────────────────────── */
+  const EX_META = {
+    "open_palm_hold": {
+      emoji:     "✋",
+      rationale: "Builds full finger extension — the foundation of hand recovery and long-term stiffness reduction.",
+      expect:    "You may feel tightness through the palm as the flexor tendons lengthen. This is normal. Stop if pain rises above 6/10.",
+    },
+    "mid_flexion_hold": {
+      emoji:     "🤚",
+      rationale: "Develops mid-range grip control — the position most used in everyday tasks like holding a cup or opening a door.",
+      expect:    "Your fingers may feel stiff initially — this typically eases after the first set as circulation improves. Stop if pain rises above 6/10.",
+    },
+    "full_fist_close": {
+      emoji:     "✊",
+      rationale: "Strengthens full grip closure — essential for holding utensils, tools, and performing functional daily tasks.",
+      expect:    "You may feel resistance through the finger flexors. That resistance is the muscle working. Stop if pain rises above 6/10.",
+    },
+    "thumb_index_pinch": {
+      emoji:     "🤏",
+      rationale: "Trains fine motor precision — critical for writing, buttoning clothing, and picking up small objects.",
+      expect:    "Pinch fatigue may arrive quickly at first — this improves rapidly with repetition. Stop if pain rises above 6/10.",
+    },
+  };
 
   const HAND_LABELS = { right: "Right hand", left: "Left hand", both: "Both hands" };
 
-  function renderPlan(plan, profile) {
-    const exercises = plan.exercises || [];
-
-    if (exercises.length === 0) {
-      container.innerHTML = `<p class="text-muted" style="margin-top:1.5rem;">
-        No exercises generated. Complete your profile and assessment first.</p>`;
-      return;
+  /* ── Estimate session duration ───────────────────────────────── */
+  function estimateDuration(exercises) {
+    let seconds = 120;
+    for (const ex of exercises) {
+      const repTime = ex.hold_s ? ex.hold_s : 4;
+      seconds += ex.sets * ex.reps * repTime;
+      seconds += Math.max(0, ex.sets - 1) * (ex.rest_s || 20);
+      seconds += 30;
     }
-
-    // ── Meta stats ──────────────────────────────────────────────
-    const condition    = profile.condition || "—";
-    const affectedHand = HAND_LABELS[profile.affected_hand] || profile.affected_hand || "—";
-    const sessionsWk   = plan.sessions_per_week ?? "—";
-
-    const metaHTML = `
-      <div class="plan-meta">
-        <div class="meta-stat">
-          <span class="meta-stat-label">Condition</span>
-          <span class="meta-stat-value">${condition}</span>
-        </div>
-        <div class="meta-stat">
-          <span class="meta-stat-label">Affected hand</span>
-          <span class="meta-stat-value">${affectedHand}</span>
-        </div>
-        <div class="meta-stat">
-          <span class="meta-stat-label">Sessions / week</span>
-          <span class="meta-stat-value">${sessionsWk}</span>
-        </div>
-      </div>`;
-
-    // ── Notes ────────────────────────────────────────────────────
-    const notesHTML = plan.notes
-      ? `<div class="note-box">${plan.notes}</div>`
-      : "";
-
-    // ── Exercise cards ───────────────────────────────────────────
-    const cardsHTML = exercises.map((ex, i) => {
-      const holdChip = ex.hold_s
-        ? `<span class="ex-chip accent">Hold ${ex.hold_s}s</span>`
-        : "";
-      return `
-        <div class="exercise-card">
-          <div class="ex-num">${i + 1}</div>
-          <div class="ex-body">
-            <div class="ex-name">${ex.name}</div>
-            ${ex.description ? `<p class="ex-description">${ex.description}</p>` : ""}
-            <div class="ex-chips">
-              <span class="ex-chip">${ex.sets} sets</span>
-              <span class="ex-chip">${ex.reps} reps</span>
-              <span class="ex-chip">${ex.rest_s}s rest</span>
-              ${holdChip}
-            </div>
-          </div>
-          <span class="badge badge-neutral" style="flex-shrink:0;">${ex.sets * ex.reps} total</span>
-        </div>`;
-    }).join("");
-
-    container.innerHTML = `
-      ${metaHTML}
-      ${notesHTML}
-      <p class="section-heading">Exercises</p>
-      <div class="exercise-list">${cardsHTML}</div>`;
-
-    btnSession.disabled = false;
+    return `~${Math.ceil(Math.ceil(seconds / 60) / 5) * 5} min`;
   }
 
-  (async () => {
+  /* ── Build plan rationale ────────────────────────────────────── */
+  function buildRationale(plan, profile) {
+    const exercises  = plan.exercises || [];
+    const sessionsWk = plan.sessions_per_week || 3;
+    const notes      = plan.notes || "";
+
+    const holdCount  = exercises.filter(e => e.tracking_type === "hold").length;
+    const repCount   = exercises.filter(e => e.tracking_type === "reps").length;
+    const hasPinch   = exercises.some(e => e.id === "thumb_index_pinch");
+
+    const focus = holdCount > 0 && repCount > 0
+      ? "range of motion and grip strength"
+      : holdCount > 0 ? "range of motion and flexibility"
+      : hasPinch      ? "fine motor control and dexterity"
+      : "grip strength and endurance";
+
+    const intensity = sessionsWk >= 4 ? "progressive intensity"
+      : sessionsWk === 3 ? "moderate intensity"
+      : "gentle, low-intensity work";
+
+    const painCtx = /High pain|very gentle/i.test(notes)
+      ? "conservative load to protect recovering tissue"
+      : /Moderate pain/i.test(notes)
+        ? "reduced volume to respect your current pain level"
+        : /Mild discomfort/i.test(notes)
+          ? "volume scaled to your current comfort level"
+          : "your assessment and check-in results";
+
+    return `This plan focuses on ${focus} at ${intensity}, based on ${painCtx}.`;
+  }
+
+  /* ── Format date string from SQLite ─────────────────────────── */
+  function formatDate(sqliteDate) {
+    if (!sqliteDate) return "";
+    const datePart = sqliteDate.split(/[ T]/)[0];
+    const [y, m, d] = datePart.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    const today = new Date();
+    if (dt.toDateString() === today.toDateString()) return "Generated today";
+    return "Generated " + dt.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  }
+
+  /* ── Render summary stats row ────────────────────────────────── */
+  function renderStats(plan, profile) {
+    const items = [
+      ["Condition",      profile.condition    || "—"],
+      ["Affected hand",  HAND_LABELS[profile.affected_hand] || profile.affected_hand || "—"],
+      ["Sessions / week", `${plan.sessions_per_week ?? "—"}×`],
+      ["Est. duration",  estimateDuration(plan.exercises || [])],
+    ];
+    return items.map(([lbl, val]) => `
+      <div class="stat-pill">
+        <span class="stat-pill-lbl">${lbl}</span>
+        <span class="stat-pill-val">${val}</span>
+      </div>`).join("");
+  }
+
+  /* ── Render goals timeline ───────────────────────────────────── */
+  function renderGoals(goals) {
+    if (!goals || goals.length === 0) return "";
+
+    const startNode = `
+      <div class="tl-node tl-start">
+        <div class="tl-dot"></div>
+        <span class="tl-week">Now</span>
+      </div>`;
+
+    const goalNodes = goals.map(g => `
+      <div class="tl-connector"></div>
+      <div class="tl-node">
+        <div class="tl-dot"></div>
+        <span class="tl-week">${g.label}</span>
+        <span class="tl-goal">${g.goal}</span>
+      </div>`).join("");
+
+    return `
+      <div id="goalsSection">
+        <p class="section-lbl">Your goals</p>
+        <div class="goals-card">
+          <div class="tl-track">${startNode}${goalNodes}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Render one exercise card ────────────────────────────────── */
+  function renderExCard(ex, idx) {
+    const meta     = EX_META[ex.id] || { emoji: "🖐", rationale: ex.description || "", expect: "Stop if pain rises above 6/10." };
+    const typeText = ex.tracking_type === "hold" ? "Hold" : "Reps";
+
+    const chips = [
+      `<div class="vol-chip"><span class="vol-lbl">Sets</span><span class="vol-val">${ex.sets}</span></div>`,
+      `<div class="vol-chip"><span class="vol-lbl">Reps</span><span class="vol-val">${ex.reps}</span></div>`,
+      ex.hold_s
+        ? `<div class="vol-chip hi"><span class="vol-lbl">Hold</span><span class="vol-val">${ex.hold_s}s</span></div>`
+        : "",
+      `<div class="vol-chip"><span class="vol-lbl">Rest</span><span class="vol-val">${ex.rest_s}s</span></div>`,
+    ].filter(Boolean).join("");
+
+    const infoIcon = `<svg class="ex-expect-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+    return `
+      <div class="ex-card">
+        <div class="ex-card-hd">
+          <div class="ex-num">${idx + 1}</div>
+          <span class="ex-emoji">${meta.emoji}</span>
+          <span class="ex-name">${ex.name}</span>
+          <span class="ex-type-badge">${typeText}</span>
+        </div>
+        <div class="ex-card-body">
+          <p class="ex-rationale">${meta.rationale}</p>
+          <div class="vol-row">${chips}</div>
+          <div class="ex-expect">${infoIcon}${meta.expect}</div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Main load ───────────────────────────────────────────────── */
+  const elLoader   = document.getElementById("planLoader");
+  const elContent  = document.getElementById("planContent");
+  const btnSession = document.getElementById("btnSession");
+
+  async function loadPlan() {
     try {
-      // Generate (or re-generate) the plan from the latest assessment + profile
-      const genResult = await api.generateAndSavePlan();
+      const [planRes, profileRes, summaryRes] = await Promise.all([
+        api.getPlan(),
+        api.getProfile(),
+        api.getAssessmentSummary(),
+      ]);
 
-      // Also fetch the user profile for condition + affected hand display
-      const profileResult = await api.getProfile();
-      const profile = profileResult.profile || {};
+      const plan      = planRes.plan       || {};
+      const profile   = profileRes.profile || {};
+      const goals     = summaryRes.goals   || [];
+      const exercises = plan.exercises     || [];
 
-      if (!genResult.ok) {
-        container.innerHTML = `<p class="text-muted" style="margin-top:1.5rem;">
-          Could not generate plan: ${genResult.error || "unknown error"}</p>`;
+      // ── Referral required — show full-page message, no plan ────────
+      if (plan.referral_required) {
+        elLoader.style.display = "none";
+        elContent.style.display = "none";
+        const wrap = document.createElement("div");
+        wrap.className = "referral-wrap";
+        wrap.innerHTML = `
+          <div>
+            <h1 class="referral-heading">Please see a physiotherapist</h1>
+            <p class="referral-body">
+              Based on your assessment, your current pain level means this app cannot safely guide
+              your rehabilitation at this time. Geuse is designed for monitoring and tracking hand
+              exercises — not for managing acute pain or severe limitations.
+            </p>
+          </div>
+          <p class="referral-body">
+            We recommend consulting a qualified physiotherapist or hand therapist who can provide
+            hands-on treatment and a clinically supervised programme tailored to your current condition.
+          </p>
+          <div class="referral-warm-card">
+            <div class="referral-warm-heading">When you are ready</div>
+            <p class="referral-warm-body">
+              Once your pain reduces and you are able to attempt basic hand movements, come back
+              and complete a new assessment. Geuse will be here to help you track your progress.
+            </p>
+          </div>
+          <div>
+            <button class="btn btn-primary" onclick="api.navigate('self_report')">
+              Reassess when ready
+            </button>
+          </div>
+        `;
+        document.querySelector(".plan-main").appendChild(wrap);
         return;
       }
 
-      renderPlan(genResult.plan, profile);
+      if (!exercises.length) {
+        elLoader.innerHTML = `<span style="color:var(--text-hint);font-size:.88rem;">No plan found — complete your assessment first.</span>`;
+        return;
+      }
+
+      // Header
+      const name = profile.name;
+      document.getElementById("planTitle").textContent = name
+        ? `Your rehabilitation plan, ${name}`
+        : "Your rehabilitation plan";
+      const dateStr = formatDate(plan.created_at);
+      document.getElementById("planDate").textContent = dateStr;
+
+      // Summary card
+      document.getElementById("summaryStats").innerHTML  = renderStats(plan, profile);
+      document.getElementById("summaryRationale").textContent = buildRationale(plan, profile);
+
+      // Goals
+      const goalsHtml = renderGoals(goals);
+      if (goalsHtml) {
+        document.getElementById("goalsSection").outerHTML = goalsHtml;
+      } else {
+        document.getElementById("goalsSection").remove();
+      }
+
+      // Exercises
+      document.getElementById("exercisesList").innerHTML =
+        exercises.map((ex, i) => renderExCard(ex, i)).join("");
+
+      // Reveal
+      elLoader.style.display  = "none";
+      elContent.style.display = "flex";
+      btnSession.disabled = false;
+
     } catch (err) {
-      container.innerHTML = `<p class="text-muted" style="margin-top:1.5rem;">
-        Something went wrong loading the plan.</p>`;
+      console.error("Failed to load plan:", err);
+      elLoader.innerHTML = `<span style="color:var(--danger);font-size:.85rem;">Unable to load your plan. Please try again.</span>`;
     }
-  })();
+  }
 
   btnSession.addEventListener("click", () => api.navigate("session"));
+
+  window.addEventListener("pywebviewready", loadPlan, { once: true });
+  if (window.pywebview?.api) {
+    window.removeEventListener("pywebviewready", loadPlan);
+    loadPlan();
+  }
+
+  /* ── Demo badge ─────────────────────────────────────────────── */
+  (function () {
+    function attachDemoBadge() {
+      window.pywebview.api.is_demo_mode().then(function (res) {
+        if (res && res.ok && res.is_demo) {
+          var wrap = document.querySelector('.topbar > div');
+          if (!wrap) return;
+          var b = document.createElement('span');
+          b.className = 'badge badge-accent';
+          b.textContent = 'Demo';
+          b.style.cssText = 'margin-left:.55rem;vertical-align:middle;font-size:.7rem;padding:.18rem .55rem;';
+          wrap.appendChild(b);
+        }
+      }).catch(function () {});
+    }
+    window.addEventListener('pywebviewready', attachDemoBadge, { once: true });
+    if (window.pywebview && window.pywebview.api) {
+      window.removeEventListener('pywebviewready', attachDemoBadge);
+      attachDemoBadge();
+    }
+  }());
+</script>
+<script>
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    document.body.style.transform = 'translateZ(0)';
+    window.dispatchEvent(new Event('resize'));
+    setTimeout(function() { document.body.style.transform = ''; }, 50);
+  }, 100);
+});
 </script>
 </body>
 </html>
