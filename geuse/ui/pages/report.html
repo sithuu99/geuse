@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Geuse — Progress Report</title>
+  <style>
+    @font-face { font-family: 'DM Sans'; src: url('../styles/fonts/dm-sans-400.woff2') format('woff2'); font-weight: 400; font-style: normal; }
+    @font-face { font-family: 'DM Sans'; src: url('../styles/fonts/dm-sans-500.woff2') format('woff2'); font-weight: 500; font-style: normal; }
+    @font-face { font-family: 'DM Sans'; src: url('../styles/fonts/dm-sans-600.woff2') format('woff2'); font-weight: 600; font-style: normal; }
+    @font-face { font-family: 'DM Sans'; src: url('../styles/fonts/dm-sans-700.woff2') format('woff2'); font-weight: 700; font-style: normal; }
+    @font-face { font-family: 'Fraunces'; src: url('../styles/fonts/fraunces-400.woff2') format('woff2'); font-weight: 400; font-style: normal; }
+    @font-face { font-family: 'Fraunces'; src: url('../styles/fonts/fraunces-700.woff2') format('woff2'); font-weight: 700; font-style: normal; }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Screen layout ───────────────────────────────────────────── */
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #efefef;
+      color: #111;
+      font-size: 13px;
+      line-height: 1.55;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .screen-nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: #fff;
+      border-bottom: 1px solid #ddd;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .screen-nav-title {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #777;
+    }
+
+    .btn-nav {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #333;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.1s;
+      white-space: nowrap;
+    }
+
+    .btn-nav:hover { background: #f5f5f5; }
+
+    .btn-nav-primary {
+      background: #111;
+      color: #fff;
+      border-color: #111;
+    }
+
+    .btn-nav-primary:hover { background: #333; }
+
+    /* ── Report container ────────────────────────────────────────── */
+    .report-wrap {
+      max-width: 860px;
+      margin: 28px auto 60px;
+      padding: 0 24px;
+    }
+
+    .report-container {
+      background: #fff;
+      padding: 52px 60px 48px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.09), 0 0 0 1px rgba(0,0,0,.04);
+    }
+
+    /* ── Report header ───────────────────────────────────────────── */
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 14px;
+      border-bottom: 2.5px solid #111;
+      margin-bottom: 28px;
+    }
+
+    .report-logo { line-height: 1; }
+
+    .report-logo-img { display: block; height: 32px; width: auto; }
+
+    .report-logo-text {
+      display: none;
+      font-family: 'Fraunces', serif;
+      font-size: 24px;
+      font-weight: 400;
+      color: #111;
+      letter-spacing: -0.02em;
+    }
+
+    .report-header-right { text-align: right; }
+
+    .report-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #111;
+      letter-spacing: .01em;
+    }
+
+    .report-date {
+      font-size: 11px;
+      color: #999;
+      margin-top: 3px;
+    }
+
+    /* ── Page section markers (visible on screen as dividers) ────── */
+    .page-section {
+      margin-top: 44px;
+      padding-top: 24px;
+      border-top: 1px dashed #ccc;
+    }
+
+    .page-heading {
+      font-family: 'Fraunces', serif;
+      font-size: 17px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 22px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #111;
+    }
+
+    /* ── Sections ────────────────────────────────────────────────── */
+    .rpt-section { margin-bottom: 24px; }
+
+    .rpt-section-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 9px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid #e8e8e8;
+    }
+
+    /* ── Patient detail grid ─────────────────────────────────────── */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 9px;
+    }
+
+    .detail-cell {
+      border: 1px solid #e4e4e4;
+      border-radius: 5px;
+      padding: 9px 11px;
+    }
+
+    .detail-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #bbb;
+      margin-bottom: 3px;
+    }
+
+    .detail-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111;
+      line-height: 1.2;
+    }
+
+    .detail-sub {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 1px;
+    }
+
+    /* ── Plan notes box ──────────────────────────────────────────── */
+    .plan-notes {
+      font-size: 11px;
+      color: #555;
+      background: #f9f9f9;
+      border: 1px solid #e4e4e4;
+      border-radius: 4px;
+      padding: 8px 12px;
+      margin-bottom: 10px;
+      line-height: 1.55;
+    }
+
+    .plan-spw {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #111;
+    }
+
+    /* ── Tables ──────────────────────────────────────────────────── */
+    .rpt-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+    }
+
+    .rpt-table th {
+      background: #f6f6f6;
+      border: 1px solid #e0e0e0;
+      padding: 5px 8px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: #888;
+      text-align: left;
+    }
+
+    .rpt-table td {
+      border: 1px solid #e4e4e4;
+      padding: 5.5px 8px;
+      color: #333;
+      vertical-align: middle;
+    }
+
+    /* ── Pain trend 3-column layout ──────────────────────────────── */
+    .pain-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .pain-col { font-size: 11px; }
+
+    .pain-col + .pain-col { border-left: 1px solid #e0e0e0; }
+
+    .pain-col-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      background: #f6f6f6;
+      padding: 5px 8px;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: #888;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    .pain-col-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      padding: 3.5px 8px;
+      border-bottom: 1px solid #f2f2f2;
+    }
+
+    .pain-col-row:last-child { border-bottom: none; }
+
+    .pv-low  { color: #15803d; font-weight: 600; }
+    .pv-mid  { color: #b45309; font-weight: 600; }
+    .pv-high { color: #b91c1c; font-weight: 600; }
+
+    /* ── Goals list ──────────────────────────────────────────────── */
+    .goals-ol {
+      list-style: none;
+      counter-reset: goal-ctr;
+      padding: 0;
+    }
+
+    .goals-ol li {
+      counter-increment: goal-ctr;
+      display: flex;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid #f2f2f2;
+      font-size: 12px;
+      align-items: baseline;
+    }
+
+    .goals-ol li:last-child { border-bottom: none; }
+
+    .goals-ol li::before {
+      content: counter(goal-ctr) ".";
+      font-weight: 700;
+      color: #aaa;
+      flex-shrink: 0;
+      width: 18px;
+    }
+
+    .goal-week {
+      font-weight: 700;
+      color: #111;
+      flex-shrink: 0;
+      min-width: 60px;
+    }
+
+    /* ── Flag items ──────────────────────────────────────────────── */
+    .flag-item {
+      padding: 9px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      margin-bottom: 7px;
+    }
+
+    .flag-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 3px;
+    }
+
+    .flag-msg { font-size: 11px; color: #666; }
+
+    .no-flags {
+      font-size: 12px;
+      color: #aaa;
+      padding: 8px 0;
+    }
+
+    /* ── Footer ──────────────────────────────────────────────────── */
+    .report-footer {
+      margin-top: 44px;
+      padding-top: 10px;
+      border-top: 1px solid #e4e4e4;
+      font-size: 10px;
+      color: #aaa;
+      line-height: 1.6;
+    }
+
+    /* ── Loading ─────────────────────────────────────────────────── */
+    #loadingView {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 60vh;
+      gap: 12px;
+      color: #999;
+      font-size: 13px;
+    }
+
+    /* ── Graph containers ───────────────────────────────────────── */
+    .graph-wrap {
+      margin-bottom: 10px;
+    }
+
+    .graph-title {
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    .graph-note {
+      display: none;
+      font-size: 8.5px;
+      font-style: italic;
+      color: #aaa;
+      margin-top: 4px;
+    }
+
+    .baseline-flex {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .baseline-flex .baseline-table-wrap { flex: 1; min-width: 0; }
+
+    .baseline-chart-wrap {
+      flex-shrink: 0;
+      width: 280px;
+    }
+
+    /* ── Print overrides ─────────────────────────────────────────── */
+    @media print {
+      @page {
+        size: A4;
+        margin: 15mm 15mm 22mm 15mm;
+      }
+
+      .no-print { display: none !important; }
+      .print-btn { display: none !important; }
+
+      /* Logo: use the styled-text fallback for print — image has an opaque
+         dark background that prints as a black rectangle.
+         .logo-amber specificity (0,1,0) beats * (0,0,0) so the amber 's'
+         survives the blanket * { color:#000 } rule below. */
+      .report-logo-img  { display: none !important; }
+      .report-logo-text { display: inline !important; }
+      .logo-amber       { color: #c4872a !important; }
+
+
+      /* Graph canvases are bitmaps — they print as-is; ensure they're not hidden */
+      canvas { display: block !important; }
+
+      /* Source attribution shown only in print */
+      .graph-note { display: block !important; color: #888 !important; }
+
+      body {
+        background: #fff !important;
+        font-size: 11px !important;
+        color: #000 !important;
+      }
+
+      .report-wrap {
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+      }
+
+      .report-container {
+        padding: 0 0 16mm 0 !important;
+        box-shadow: none !important;
+      }
+
+      /* force all colour/bg back to black-on-white */
+      * {
+        color: #000 !important;
+        background: #fff !important;
+        box-shadow: none !important;
+      }
+
+      .report-header {
+        border-bottom: 2px solid #000 !important;
+      }
+
+      .page-section {
+        page-break-before: always !important;
+        border-top: none !important;
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+      }
+
+      .page-heading {
+        border-bottom: 2px solid #000 !important;
+        color: #000 !important;
+        font-size: 14px !important;
+      }
+
+      .rpt-section-title {
+        color: #555 !important;
+        border-bottom: 1px solid #000 !important;
+        font-size: 9px !important;
+      }
+
+      .detail-cell {
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+      }
+
+      .detail-label { color: #555 !important; }
+      .detail-value { font-size: 12px !important; }
+
+      .plan-notes {
+        background: #f4f4f4 !important;
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+      }
+
+      .rpt-table th {
+        background: #eee !important;
+        border: 1px solid #000 !important;
+        color: #000 !important;
+        border-radius: 0 !important;
+      }
+
+      .rpt-table td {
+        border: 1px solid #000 !important;
+        color: #000 !important;
+      }
+
+      /* Prevent tables from overflowing the A4 print area.
+         table-layout:fixed makes columns share width evenly instead of
+         expanding to content width; word-break lets long strings wrap. */
+      .rpt-table {
+        table-layout: fixed !important;
+        width: 100% !important;
+      }
+
+      .rpt-table th,
+      .rpt-table td {
+        overflow: hidden !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        white-space: normal !important;
+      }
+
+      /* Stack the baseline table + bar chart vertically so neither overflows */
+      .baseline-flex {
+        flex-direction: column !important;
+      }
+
+      .baseline-chart-wrap {
+        width: 100% !important;
+      }
+
+      .pain-columns {
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+      }
+
+      .pain-col + .pain-col { border-left: 1px solid #000 !important; }
+
+      .pain-col-header {
+        background: #eee !important;
+        border-bottom: 1px solid #000 !important;
+        color: #000 !important;
+      }
+
+      .pain-col-row { border-bottom: 1px solid #eee !important; }
+
+      .goals-ol li { border-bottom: 1px solid #eee !important; }
+      .goals-ol li::before { color: #555 !important; }
+      .goal-week { color: #000 !important; }
+
+      .flag-item {
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+      }
+
+      .report-footer {
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        border-top: 1px solid #000 !important;
+        padding: 4px 15mm !important;
+        font-size: 9px !important;
+        color: #000 !important;
+        background: #fff !important;
+        margin: 0 !important;
+        text-align: center !important;
+        line-height: 1.5 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Screen-only navigation bar -->
+<div class="screen-nav no-print">
+  <button class="btn-nav" onclick="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Dashboard
+  </button>
+  <span class="screen-nav-title">Progress Report Preview — scroll to review, then print</span>
+  <button class="btn-nav btn-nav-primary print-btn" id="printBtn" onclick="triggerPrint()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+      fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 6 2 18 2 18 9"/>
+      <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+      <rect x="6" y="14" width="12" height="8"/>
+    </svg>
+    Print / Save PDF
+  </button>
+</div>
+
+<!-- Loading state -->
+<div id="loadingView">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+    fill="none" stroke="#bbb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+    style="animation:spin .85s linear infinite;">
+    <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+  </svg>
+  Building report…
+</div>
+
+<!-- Report body -->
+<div class="report-wrap" id="reportContent" style="display:none;">
+  <div class="report-container">
+
+    <!-- ──────────────────────────────────────────────────────────── -->
+    <!-- Report header                                                -->
+    <!-- ──────────────────────────────────────────────────────────── -->
+    <div class="report-header">
+      <div class="report-logo">
+        <img src="../assets/logo.png" height="32" class="report-logo-img" alt="Geuse">
+        <span class="report-logo-text">geu<span class="logo-amber" style="color:#c4872a;">s</span>e</span>
+      </div>
+      <div class="report-header-right">
+        <div class="report-title">Rehabilitation Progress Report</div>
+        <div class="report-date" id="reportDate"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PAGE 1 — Patient Summary
+    ══════════════════════════════════════════════════════════════ -->
+
+    <div class="page-heading">Patient Summary</div>
+
+    <!-- Patient details -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Patient Details</p>
+      <div class="detail-grid" id="patientGrid"></div>
+    </div>
+
+    <!-- Assessment baseline table + bar chart -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Assessment Baseline</p>
+      <div class="baseline-flex">
+        <div class="baseline-table-wrap">
+          <table class="rpt-table">
+            <thead>
+              <tr>
+                <th>Exercise</th>
+                <th>Baseline Closure</th>
+                <th>Rating</th>
+                <th>Date Assessed</th>
+              </tr>
+            </thead>
+            <tbody id="baselineTbody"></tbody>
+          </table>
+        </div>
+        <div class="baseline-chart-wrap">
+          <div class="graph-wrap">
+            <canvas id="rptBaselineCanvas" style="display:block;width:280px;height:140px;"></canvas>
+            <p class="graph-note">Graph generated from session data recorded in Geuse.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current plan summary -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Current Rehabilitation Plan</p>
+      <div id="planSummary"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PAGE 2 — Progress Data
+    ══════════════════════════════════════════════════════════════ -->
+
+    <div class="page-section">
+      <div class="page-heading">Progress Data</div>
+    </div>
+
+    <!-- Pain trend graph + table -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Pain Trend — Last 30 Check-ins</p>
+      <div class="graph-wrap">
+        <p class="graph-title">Pain trend — last 30 check-ins</p>
+        <canvas id="rptPainCanvas" style="display:block;width:100%;height:160px;"></canvas>
+        <p class="graph-note">Graph generated from session data recorded in Geuse.</p>
+      </div>
+      <div class="pain-columns" id="painColumns"></div>
+    </div>
+
+    <!-- Hold duration progress graph -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Hold Duration Progress by Exercise</p>
+      <div class="graph-wrap">
+        <p class="graph-title">Hold duration progress by exercise</p>
+        <canvas id="rptHoldCanvas" style="display:block;width:100%;height:160px;"></canvas>
+        <p class="graph-note">Graph generated from session data recorded in Geuse.</p>
+      </div>
+    </div>
+
+    <!-- Session history -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Session History — Last 20 Sessions</p>
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Exercises Completed</th>
+            <th>Duration</th>
+            <th>Pain After</th>
+          </tr>
+        </thead>
+        <tbody id="sessionTbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Best hold achievements -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Best Hold Achievements</p>
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th>Exercise</th>
+            <th>Baseline Hold (Assessment)</th>
+            <th>Current Best Hold</th>
+            <th>Improvement</th>
+          </tr>
+        </thead>
+        <tbody id="holdsTbody"></tbody>
+      </table>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         PAGE 3 — Goals & Flags
+    ══════════════════════════════════════════════════════════════ -->
+
+    <div class="page-section">
+      <div class="page-heading">Goals &amp; Health Flags</div>
+    </div>
+
+    <!-- Milestone goals -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Milestone Goals</p>
+      <ol class="goals-ol" id="goalsOl"></ol>
+    </div>
+
+    <!-- Plan progression history -->
+    <div class="rpt-section">
+      <p class="rpt-section-title">Plan Progression History</p>
+      <table class="rpt-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Exercise</th>
+            <th>Old Target</th>
+            <th>New Target</th>
+            <th>Change</th>
+          </tr>
+        </thead>
+        <tbody id="progressionTbody"></tbody>
+      </table>
+    </div>
+
+    <!-- Active health flags -->
+    <div class="rpt-section" id="flagsSection">
+      <p class="rpt-section-title">Active Health Flags</p>
+      <div id="flagsContainer"></div>
+    </div>
+
+    <!-- ── Footer (fixed in print, normal flow on screen) ── -->
+    <div class="report-footer" id="reportFooter"></div>
+
+  </div><!-- /.report-container -->
+</div><!-- /.report-wrap -->
+
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+/* ── Navigation ─────────────────────────────────────────────────── */
+function goBack() {
+  try { window.pywebview.api.navigate("dashboard"); } catch (_) {}
+}
+
+/* ── PDF generation ──────────────────────────────────────────────── */
+// window.print() is silently ignored in PyWebView Qt because the backend
+// never connects the printRequested signal.  generate_pdf() calls
+// QWebEnginePage.printToPdf() via the Python API and opens the result.
+async function triggerPrint() {
+  const btn      = document.getElementById("printBtn");
+  const origHTML = btn ? btn.innerHTML : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Generating…"; }
+  try {
+    const r = await window.pywebview.api.generate_pdf();
+    if (r && r.ok) {
+      if (btn) btn.textContent = r.note ? "Opened in browser ✓" : "Saved to Downloads ✓";
+    } else {
+      if (btn) btn.textContent = (r && r.error) ? r.error.slice(0, 40) : "Failed";
+    }
+  } catch (e) {
+    if (btn) btn.textContent = "Error — see console";
+  } finally {
+    if (btn) {
+      setTimeout(() => { btn.innerHTML = origHTML; btn.disabled = false; }, 3500);
+    }
+  }
+}
+
+/* ── Helpers ─────────────────────────────────────────────────────── */
+function fmtDate(isoStr) {
+  if (!isoStr) return "—";
+  try {
+    const d = new Date(isoStr.replace(" ", "T"));
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+  } catch (_) { return (isoStr || "").slice(0, 10); }
+}
+
+function fmtDuration(s) {
+  if (!s) return "—";
+  const m = Math.round(s / 60);
+  return m < 1 ? `${s}s` : `${m} min`;
+}
+
+function painClass(v) {
+  return v <= 3 ? "pv-low" : v <= 6 ? "pv-mid" : "pv-high";
+}
+
+function baselineRating(exType, v) {
+  if (v == null) return "—";
+  if (exType === "palm") {
+    if (v <= 0.20) return "Excellent";
+    if (v <= 0.35) return "Good";
+    return "Limited extension";
+  }
+  if (exType === "mid_flex") {
+    if (v >= 0.40 && v <= 0.60) return "Good";
+    if (v < 0.40) return "Limited";
+    return "Strong";
+  }
+  if (exType === "fist") {
+    if (v >= 0.70) return "Good closure";
+    if (v >= 0.50) return "Moderate";
+    return "Limited";
+  }
+  return "—";
+}
+
+const FLAG_DEFS = {
+  inconsistent_pain_closure: {
+    title: "Movement decreasing despite low pain",
+    msg:   "Hand movement has been decreasing despite low pain reports. Reporting pain more accurately will help adjust your plan.",
+  },
+  high_pain_good_closure: {
+    title: "High pain with improving range of motion",
+    msg:   "Pain levels have been high recently while range of motion is improving. Pushing through significant pain risks injury.",
+  },
+  plateau: {
+    title: "Progress has levelled off",
+    msg:   "Progress has levelled off over the last 5 sessions. It may be time to reassess your plan.",
+  },
+  rapid_decline: {
+    title: "Significant drop in hand movement",
+    msg:   "A significant drop in hand movement was recorded in the last session, which may indicate a flare-up.",
+  },
+  pain_increasing: {
+    title: "Increasing pain trend",
+    msg:   "Reported pain has been increasing over the last week.",
+  },
+};
+
+/* ── Canvas helpers ──────────────────────────────────────────────── */
+
+function drawPainChart(painHistory) {
+  const canvas = document.getElementById("rptPainCanvas");
+  if (!canvas) return;
+  const data = (painHistory || []).slice(-30);
+  if (data.length < 2) { canvas.style.display = "none"; return; }
+
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.offsetWidth || 560;
+  const H   = 160;
+  canvas.width        = Math.round(W * dpr);
+  canvas.height       = Math.round(H * dpr);
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = { left: 28, right: 10, top: 10, bottom: 22 };
+  const cW  = W - PAD.left - PAD.right;
+  const cH  = H - PAD.top  - PAD.bottom;
+  const n   = data.length;
+
+  const xOf = i => PAD.left + (i / (n - 1)) * cW;
+  const yOf = v => PAD.top  + (1 - v / 10) * cH;
+
+  function dotColor(v) {
+    return v <= 3 ? "#2a8f58" : v <= 6 ? "#c4872a" : "#b91c1c";
+  }
+
+  // Background bands
+  ctx.fillStyle = "rgba(42,143,88,0.06)";
+  ctx.fillRect(PAD.left, yOf(3), cW, yOf(0) - yOf(3));
+  ctx.fillStyle = "rgba(196,135,42,0.07)";
+  ctx.fillRect(PAD.left, yOf(6), cW, yOf(3) - yOf(6));
+
+  // Grid lines + Y labels
+  ctx.font         = `9px "DM Sans", system-ui, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign    = "right";
+  for (const gv of [0, 2, 4, 6, 8, 10]) {
+    const gy = yOf(gv);
+    ctx.strokeStyle = "#e0e0e0";
+    ctx.lineWidth   = 0.75;
+    ctx.beginPath(); ctx.moveTo(PAD.left, gy); ctx.lineTo(W - PAD.right, gy); ctx.stroke();
+    ctx.fillStyle = "#999";
+    ctx.fillText(String(gv), PAD.left - 4, gy);
+  }
+
+  // X labels
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "top";
+  ctx.fillStyle    = "#999";
+  for (let i = 0; i < n; i++) {
+    if (i % 5 !== 0 && i !== n - 1) continue;
+    ctx.fillText((data[i].date || "").slice(5, 10), xOf(i), H - PAD.bottom + 3);
+  }
+
+  // Line segments coloured by lower endpoint value
+  ctx.lineWidth = 1.5;
+  ctx.lineCap   = "round";
+  ctx.lineJoin  = "round";
+  for (let i = 0; i < n - 1; i++) {
+    ctx.strokeStyle = dotColor(Math.min(data[i].value, data[i + 1].value));
+    ctx.beginPath();
+    ctx.moveTo(xOf(i), yOf(data[i].value));
+    ctx.lineTo(xOf(i + 1), yOf(data[i + 1].value));
+    ctx.stroke();
+  }
+
+  // Dots
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = dotColor(data[i].value);
+    ctx.beginPath();
+    ctx.arc(xOf(i), yOf(data[i].value), 3, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function drawHoldChart(sessions) {
+  const canvas = document.getElementById("rptHoldCanvas");
+  if (!canvas) return;
+  const data = sessions || [];
+  if (data.length < 2) { canvas.style.display = "none"; return; }
+
+  const SERIES = [
+    { key: "open_palm", label: "Open Palm", color: "#c4872a" },
+    { key: "mid_flex",  label: "Mid Flex",  color: "#2a8f58" },
+    { key: "fist",      label: "Full Fist", color: "#6366f1" },
+  ];
+
+  let maxHold = 2;
+  for (const s of data)
+    for (const ser of SERIES)
+      if (s[ser.key] != null && s[ser.key] > maxHold) maxHold = s[ser.key];
+  maxHold = Math.ceil((maxHold + 2) / 2) * 2;
+
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvas.offsetWidth || 560;
+  const H   = 160;
+  canvas.width        = Math.round(W * dpr);
+  canvas.height       = Math.round(H * dpr);
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const n   = data.length;
+  const PAD = { left: 32, right: 76, top: 10, bottom: 22 };
+  const cW  = W - PAD.left - PAD.right;
+  const cH  = H - PAD.top  - PAD.bottom;
+
+  const xOf = i => PAD.left + (i / (n - 1)) * cW;
+  const yOf = v => PAD.top  + (1 - v / maxHold) * cH;
+
+  // Grid lines + Y labels
+  ctx.font         = `9px "DM Sans", system-ui, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign    = "right";
+  for (let gv = 0; gv <= maxHold; gv += 2) {
+    const gy = yOf(gv);
+    ctx.strokeStyle = "#e0e0e0";
+    ctx.lineWidth   = 0.75;
+    ctx.beginPath(); ctx.moveTo(PAD.left, gy); ctx.lineTo(W - PAD.right, gy); ctx.stroke();
+    ctx.fillStyle = "#999";
+    ctx.fillText(`${gv}s`, PAD.left - 4, gy);
+  }
+
+  // X labels (session numbers)
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "top";
+  ctx.fillStyle    = "#999";
+  const step = n <= 12 ? 1 : Math.ceil(n / 12);
+  for (let i = 0; i < n; i++) {
+    if (i % step !== 0 && i !== n - 1) continue;
+    ctx.fillText(String(data[i].session_num || i + 1), xOf(i), H - PAD.bottom + 3);
+  }
+
+  // One line + dots per series, with inline legend on right
+  let legendY = PAD.top + 4;
+  for (const ser of SERIES) {
+    const pts = data
+      .map((s, i) => s[ser.key] != null ? { i, v: s[ser.key] } : null)
+      .filter(Boolean);
+    if (pts.length === 0) continue;
+
+    ctx.strokeStyle = ser.color;
+    ctx.lineWidth   = 1.5;
+    ctx.lineCap     = "round";
+    ctx.lineJoin    = "round";
+    if (pts.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(xOf(pts[0].i), yOf(pts[0].v));
+      for (let p = 1; p < pts.length; p++)
+        ctx.lineTo(xOf(pts[p].i), yOf(pts[p].v));
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = ser.color;
+    for (const pt of pts) {
+      ctx.beginPath();
+      ctx.arc(xOf(pt.i), yOf(pt.v), 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Inline legend
+    ctx.beginPath();
+    ctx.moveTo(W - PAD.right + 6, legendY);
+    ctx.lineTo(W - PAD.right + 18, legendY);
+    ctx.strokeStyle = ser.color;
+    ctx.lineWidth   = 2;
+    ctx.stroke();
+    ctx.fillStyle    = "#777";
+    ctx.font         = `9px "DM Sans", system-ui, sans-serif`;
+    ctx.textAlign    = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ser.label, W - PAD.right + 22, legendY);
+    legendY += 16;
+  }
+}
+
+function drawBaselineChart(closureChart) {
+  const canvas = document.getElementById("rptBaselineCanvas");
+  if (!canvas) return;
+
+  const baseline = (closureChart || [])[0] || {};
+  const bars = [
+    { label: "Open Palm", sub: "open_palm", value: baseline.palm     ?? null },
+    { label: "Mid Flex",  sub: "mid_flex",  value: baseline.mid_flex ?? null },
+    { label: "Full Fist", sub: "fist",      value: baseline.fist     ?? null },
+  ];
+
+  if (bars.every(b => b.value === null)) { canvas.style.display = "none"; return; }
+
+  function barColor(label, v) {
+    if (v === null) return "#e0e0e0";
+    if (label === "Open Palm") return v <= 0.35 ? "#2a8f58" : "#b91c1c";
+    if (label === "Mid Flex")  return (v >= 0.40 && v <= 0.60) ? "#2a8f58" : v < 0.40 ? "#c4872a" : "#2a8f58";
+    if (label === "Full Fist") return v >= 0.70 ? "#2a8f58" : v >= 0.50 ? "#c4872a" : "#b91c1c";
+    return "#999";
+  }
+
+  const W   = 280;
+  const H   = 140;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width        = Math.round(W * dpr);
+  canvas.height       = Math.round(H * dpr);
+  canvas.style.width  = W + "px";
+  canvas.style.height = H + "px";
+
+  const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = { top: 10, bottom: 38 };
+  const cH  = H - PAD.top - PAD.bottom;
+  const yOf = v => PAD.top + (1 - v) * cH;
+
+  // Horizontal grid lines
+  ctx.font = `8px "DM Sans", system-ui, sans-serif`;
+  for (const gv of [0, 0.25, 0.5, 0.75, 1.0]) {
+    const gy = yOf(gv);
+    ctx.strokeStyle = "#ebebeb";
+    ctx.lineWidth   = 0.75;
+    ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+    ctx.fillStyle    = "#bbb";
+    ctx.textAlign    = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillText(gv.toFixed(2), W - 4, gy);
+  }
+
+  // Bars
+  const gap = 14;
+  const bw  = (W - (bars.length + 1) * gap) / bars.length;
+
+  for (let i = 0; i < bars.length; i++) {
+    const b  = bars[i];
+    const v  = b.value ?? 0;
+    const bx = gap + i * (bw + gap);
+    const by = yOf(v);
+    const bh = v * cH;
+
+    ctx.fillStyle = barColor(b.label, b.value);
+    ctx.fillRect(bx, by, bw, bh);
+
+    // Exercise name
+    ctx.fillStyle    = "#555";
+    ctx.font         = `8px "DM Sans", system-ui, sans-serif`;
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(b.label, bx + bw / 2, H - PAD.bottom + 4);
+
+    // Closure value
+    ctx.fillStyle = "#aaa";
+    ctx.font      = `7px "DM Sans", system-ui, sans-serif`;
+    ctx.fillText(b.value != null ? b.value.toFixed(3) : "—", bx + bw / 2, H - PAD.bottom + 15);
+  }
+}
+
+/* ── Main boot ───────────────────────────────────────────────────── */
+async function boot() {
+  const api = window.pywebview.api;
+  const today = new Date();
+
+  try {
+    const [
+      profileRes, planRes, progressRes, monthlyRes,
+      progLogRes, flagsRes, insightsRes, assessRes, holdRes,
+    ] = await Promise.all([
+      api.get_profile(),
+      api.get_plan(),
+      api.get_progress_data(),
+      api.get_monthly_history(),
+      api.get_progression_log(),
+      api.get_active_flags(),
+      api.get_insights(),
+      api.get_assessment_summary(),
+      api.get_hold_progress(),
+    ]);
+
+    const todayLong = today.toLocaleDateString(undefined, {
+      weekday: "long", day: "numeric", month: "long", year: "numeric",
+    });
+
+    /* ── Header & footer ──────────────────────────────────────────── */
+    document.getElementById("reportDate").textContent = `Generated on ${todayLong}`;
+    document.getElementById("reportFooter").innerHTML =
+      `Generated by Geuse on ${todayLong} &nbsp;·&nbsp; ` +
+      `This report is not a clinical document. Please review with a qualified physiotherapist.`;
+
+    /* ── Patient details ──────────────────────────────────────────── */
+    const profile = profileRes.profile || {};
+    let daysSince = "—";
+    if (profile.created_at) {
+      try {
+        const startMs = new Date(profile.created_at.replace(" ", "T")).getTime();
+        daysSince = Math.max(1, Math.ceil((today - startMs) / 86400000));
+      } catch (_) {}
+    }
+    const goals = Array.isArray(profile.goals) ? profile.goals.join(", ") : (profile.goals || "—");
+
+    const details = [
+      { label: "Name",              value: profile.name          || "—" },
+      { label: "Affected Hand",     value: profile.affected_hand || "—" },
+      { label: "Condition",         value: profile.condition     || "—" },
+      { label: "Days in Recovery",  value: daysSince,  sub: "days since started" },
+      { label: "Total Sessions",    value: progressRes.total_sessions ?? "—" },
+      { label: "Current Streak",   value: progressRes.streak != null ? `${progressRes.streak} day${progressRes.streak !== 1 ? "s" : ""}` : "—" },
+    ];
+
+    document.getElementById("patientGrid").innerHTML = details.map(d => `
+      <div class="detail-cell">
+        <div class="detail-label">${d.label}</div>
+        <div class="detail-value">${d.value}</div>
+        ${d.sub ? `<div class="detail-sub">${d.sub}</div>` : ""}
+      </div>`).join("");
+
+    /* ── Assessment baseline ──────────────────────────────────────── */
+    const closureChart = progressRes.closure_chart || [];
+    const baseline = closureChart[0] || {};
+    const baselineDateStr = baseline.date ? fmtDate(baseline.date) : "—";
+
+    const BL_ROWS = [
+      { name: "Open Palm",   key: "palm",     exType: "palm"     },
+      { name: "Mid Flexion", key: "mid_flex", exType: "mid_flex" },
+      { name: "Full Fist",   key: "fist",     exType: "fist"     },
+    ];
+
+    document.getElementById("baselineTbody").innerHTML = BL_ROWS.map(r => {
+      const v = baseline[r.key] ?? null;
+      return `<tr>
+        <td>${r.name}</td>
+        <td>${v != null ? v.toFixed(3) : "—"}</td>
+        <td>${baselineRating(r.exType, v)}</td>
+        <td>${baselineDateStr}</td>
+      </tr>`;
+    }).join("");
+
+    /* ── Current plan ─────────────────────────────────────────────── */
+    const plan = planRes.plan || {};
+    const planExs = plan.exercises || [];
+    const spw = plan.sessions_per_week || "—";
+    const planNotes = (plan.notes || "").replace(/^__REFERRAL__\s*/, "").trim();
+
+    let planHtml = `<p class="plan-spw">Sessions per week: ${spw}</p>`;
+    if (planNotes) {
+      planHtml += `<div class="plan-notes">${planNotes}</div>`;
+    }
+
+    if (planExs.length) {
+      planHtml += `<table class="rpt-table">
+        <thead><tr><th>Exercise</th><th>Type</th><th>Sets</th><th>Reps / Holds</th><th>Hold Duration</th><th>Rest</th></tr></thead>
+        <tbody>
+          ${planExs.map(ex => `<tr>
+            <td>${ex.name || "—"}</td>
+            <td>${ex.tracking_type === "hold" ? "Hold" : "Reps"}</td>
+            <td>${ex.sets ?? "—"}</td>
+            <td>${ex.reps ?? "—"}</td>
+            <td>${ex.hold_s != null ? ex.hold_s + "s" : "—"}</td>
+            <td>${ex.rest_s != null ? ex.rest_s + "s" : "—"}</td>
+          </tr>`).join("")}
+        </tbody>
+      </table>`;
+    } else {
+      planHtml += `<p style="font-size:12px;color:#aaa;">No plan data available.</p>`;
+    }
+
+    document.getElementById("planSummary").innerHTML = planHtml;
+
+    /* ── Pain trend — 3-column layout ────────────────────────────── */
+    const painHistory = (progressRes.pain_history || []).slice(-30);
+    if (painHistory.length === 0) {
+      document.getElementById("painColumns").innerHTML =
+        `<div style="grid-column:1/-1;padding:12px;font-size:11px;color:#aaa;text-align:center;">No check-in data yet.</div>`;
+    } else {
+      const colSize = Math.ceil(painHistory.length / 3);
+      const cols = [
+        painHistory.slice(0, colSize),
+        painHistory.slice(colSize, colSize * 2),
+        painHistory.slice(colSize * 2),
+      ];
+
+      document.getElementById("painColumns").innerHTML = cols.map(col => `
+        <div class="pain-col">
+          <div class="pain-col-header"><span>Date</span><span>Pain</span></div>
+          ${col.map(p => {
+            const dateLabel = (p.date || "").slice(0, 10);
+            return `<div class="pain-col-row">
+              <span>${dateLabel}</span>
+              <span class="${painClass(p.value)}">${p.value}/10</span>
+            </div>`;
+          }).join("")}
+        </div>`).join("");
+    }
+
+    /* ── Session history ──────────────────────────────────────────── */
+    const sessions = (progressRes.session_history || [])
+      .filter(s => s.status === "completed")
+      .slice(0, 20);
+
+    document.getElementById("sessionTbody").innerHTML = sessions.length
+      ? sessions.map(s => {
+          const exNames = (s.exercises || [])
+            .map(e => e.display_name || e.name || (e.exercise || "").replace(/_/g, " "))
+            .filter(Boolean).join(", ");
+          const pain = s.pain_after ?? s.pain_before;
+          return `<tr>
+            <td style="white-space:nowrap;">${fmtDate(s.completed_at)}</td>
+            <td style="font-size:10.5px;">${exNames || "—"}</td>
+            <td>${fmtDuration(s.duration_s)}</td>
+            <td>${pain != null ? pain + "/10" : "—"}</td>
+          </tr>`;
+        }).join("")
+      : `<tr><td colspan="4" style="text-align:center;color:#aaa;padding:12px;">No completed sessions yet.</td></tr>`;
+
+    /* ── Best hold achievements ────────────────────────────────────── */
+    const holdSessions = holdRes?.sessions || [];
+    const assessExercises = assessRes?.exercises || [];
+
+    function bestHoldFor(key) {
+      let best = null;
+      for (const s of holdSessions) {
+        if (s[key] != null && (best === null || s[key] > best)) best = s[key];
+      }
+      return best;
+    }
+
+    function assessBaselineHold(exId) {
+      const ex = assessExercises.find(e => e.exercise_id === exId);
+      return ex ? ex.best_hold_s : null;
+    }
+
+    const HOLD_ROWS = [
+      { name: "Open Palm Hold",   key: "open_palm", assessId: "open_palm"   },
+      { name: "Mid Flexion Hold", key: "mid_flex",  assessId: "mid_flexion" },
+      { name: "Full Fist Close",  key: "fist",      assessId: "full_fist"   },
+    ];
+
+    document.getElementById("holdsTbody").innerHTML = HOLD_ROWS.map(r => {
+      const baseline = assessBaselineHold(r.assessId);
+      const current  = bestHoldFor(r.key);
+      let improvement = "—";
+      if (baseline != null && current != null && baseline > 0) {
+        const diffS = (current - baseline).toFixed(1);
+        const pct   = Math.round((current - baseline) / baseline * 100);
+        const sign  = current >= baseline ? "+" : "";
+        improvement = `${sign}${diffS}s (${sign}${pct}%)`;
+      } else if (current != null && baseline === 0) {
+        improvement = `${current}s from baseline`;
+      }
+      return `<tr>
+        <td>${r.name}</td>
+        <td>${baseline != null ? baseline + "s" : "—"}</td>
+        <td>${current  != null ? current  + "s" : "—"}</td>
+        <td>${improvement}</td>
+      </tr>`;
+    }).join("");
+
+    /* ── Milestone goals ──────────────────────────────────────────── */
+    const goals2 = assessRes?.goals || [];
+    document.getElementById("goalsOl").innerHTML = goals2.length
+      ? goals2.map(g => `
+          <li>
+            <span class="goal-week">${g.label || ("Week " + g.week)}</span>
+            <span>${g.goal}</span>
+          </li>`).join("")
+      : `<li style="color:#aaa;list-style:none;">No goals data available — complete your assessment first.</li>`;
+
+    /* ── Plan progression log ─────────────────────────────────────── */
+    const progEntries = progLogRes?.entries || [];
+    document.getElementById("progressionTbody").innerHTML = progEntries.length
+      ? progEntries.map(e => `<tr>
+          <td style="white-space:nowrap;">${fmtDate(e.progressed_at)}</td>
+          <td>${(e.exercise || "").replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase())}</td>
+          <td>${e.old_value || "—"}</td>
+          <td>${e.new_value || "—"}</td>
+          <td style="font-size:10.5px;">${e.description || "—"}</td>
+        </tr>`).join("")
+      : `<tr><td colspan="5" style="text-align:center;color:#aaa;padding:12px;">No plan progressions recorded yet.</td></tr>`;
+
+    /* ── Active health flags ──────────────────────────────────────── */
+    const activeFlags = (flagsRes?.flags || []).filter(f => FLAG_DEFS[f.flag_type]);
+    const flagsContainer = document.getElementById("flagsContainer");
+    if (activeFlags.length) {
+      flagsContainer.innerHTML = activeFlags.map(f => {
+        const def = FLAG_DEFS[f.flag_type];
+        return `<div class="flag-item">
+          <div class="flag-title">${def.title}</div>
+          <div class="flag-msg">${def.msg}</div>
+        </div>`;
+      }).join("");
+    } else {
+      flagsContainer.innerHTML = `<p class="no-flags">No active health flags at the time of this report.</p>`;
+    }
+
+    /* ── Show report, draw canvases, then print ──────────────────── */
+    document.getElementById("loadingView").style.display  = "none";
+    document.getElementById("reportContent").style.display = "block";
+
+    // rAF forces layout so canvas.offsetWidth is valid before drawing.
+    requestAnimationFrame(() => {
+      drawPainChart(progressRes.pain_history || []);
+      drawHoldChart((holdRes?.sessions) || []);
+      drawBaselineChart(progressRes.closure_chart || []);
+    });
+
+  } catch (err) {
+    document.getElementById("loadingView").innerHTML =
+      `<p style="color:#aaa;font-size:13px;">Failed to build report: ${err.message}</p>`;
+  }
+}
+
+if (window.pywebview?.api) {
+  boot();
+} else {
+  window.addEventListener("pywebviewready", boot, { once: true });
+}
+</script>
+</body>
+</html>

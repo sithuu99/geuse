@@ -207,6 +207,17 @@ body {
   will-change: transform;
 }
 
+/* Camera canvas: GPU layer to prevent repaint flicker on Windows */
+#cameraFeed,
+.camera-feed {
+  image-rendering: pixelated;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  isolation: isolate;
+}
+
 /* Opt-in scrollable containers */
 .scrollable { overflow-y: auto; overflow-x: hidden; }
 

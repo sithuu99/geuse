@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Geuse — Progress</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
@@ -289,6 +290,41 @@
       color: var(--text-hint);
     }
 
+    /* ── Hold progress chart ─────────────────────────────────────── */
+    .hold-chart-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .hold-canvas-container {
+      position: relative;
+    }
+
+    .hold-tooltip {
+      position: absolute;
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: .4rem .65rem;
+      font-size: .78rem;
+      color: var(--text);
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,.14);
+      z-index: 10;
+      line-height: 1.5;
+    }
+
+    .hold-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .75rem;
+      margin-top: .85rem;
+    }
+
     /* ── Pain trend ──────────────────────────────────────────── */
     .pain-trend-wrap {
       background: var(--surface);
@@ -452,6 +488,12 @@
       line-height: 1.4;
     }
 
+    .prog-entry-change {
+      font-size: .75rem;
+      color: var(--text-hint);
+      font-weight: 500;
+    }
+
     /* ── Loading ─────────────────────────────────────────────── */
     #loadingView {
       display: flex;
@@ -484,6 +526,15 @@
     <div style="font-size:.82rem;font-weight:600;color:var(--text-hint);">Progress</div>
     <div class="topbar-right">
       <button class="btn btn-ghost btn-sm" id="btnDone">Done</button>
+      <button class="btn btn-ghost btn-sm" onclick="window.pywebview.api.navigate('report')" title="Export progress report as PDF" style="display:inline-flex;align-items:center;gap:.35rem;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
+          fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 6 2 18 2 18 9"/>
+          <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect x="6" y="14" width="12" height="8"/>
+        </svg>
+        Export report
+      </button>
       <button class="theme-toggle" onclick="api.navigate('settings')" aria-label="Settings" title="Settings"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
       <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark"></button>
     </div>
@@ -511,11 +562,6 @@
             <div class="stat-card-label">Current streak</div>
             <div class="stat-card-value" id="ovStreak">—</div>
             <div class="stat-card-sub">days in a row</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-card-label">Best hold</div>
-            <div class="stat-card-value" id="ovBestHold">—</div>
-            <div class="stat-card-sub">seconds</div>
           </div>
           <div class="stat-card">
             <div class="stat-card-label">Avg pain (7d)</div>
@@ -561,6 +607,25 @@
             </div>
             <div class="baseline-card-raw" id="blFistRaw"></div>
             <div class="baseline-card-sub" id="blFistDate">Your starting point</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- §2b Hold Progress Chart -->
+      <section id="holdProgressSection">
+        <p class="section-title">Best Hold Over Time</p>
+        <div class="hold-chart-wrap">
+          <div id="holdProgressEmpty" style="height:120px;display:flex;align-items:center;justify-content:center;font-size:.82rem;color:var(--text-hint);text-align:center;">
+            Complete more sessions to see your hold progress here
+          </div>
+          <div class="hold-canvas-container" id="holdCanvasWrap" style="display:none;">
+            <canvas id="holdCanvas" style="width:100%;height:220px;display:block;"></canvas>
+            <div class="hold-tooltip" id="holdTooltip"></div>
+          </div>
+          <div class="hold-legend" id="holdLegend" style="display:none;">
+            <span class="legend-item"><div class="legend-dot" style="background:#c4872a;"></div> Open Palm Hold</span>
+            <span class="legend-item"><div class="legend-dot" style="background:#2a8f58;"></div> Mid Flexion Hold</span>
+            <span class="legend-item"><div class="legend-dot" style="background:#6366f1;"></div> Full Fist Hold</span>
           </div>
         </div>
       </section>
@@ -1158,6 +1223,18 @@ function renderMonthlyHistory(months) {
 }
 
 /* ── Plan progression history ────────────────────────────────── */
+function fmtProgValue(raw) {
+  if (!raw) return "—";
+  const m = raw.match(/^(\w+)=(\S+)$/);
+  if (m) {
+    const [, key, val] = m;
+    if (key === "hold_s") return `${val} second hold`;
+    if (key === "reps")   return `${val} reps`;
+    if (key === "sets")   return `${val} sets`;
+  }
+  return raw;
+}
+
 function renderProgressionHistory(entries) {
   const section  = document.getElementById("progressionHistorySection");
   const timeline = document.getElementById("progressionTimeline");
@@ -1175,12 +1252,18 @@ function renderProgressionHistory(entries) {
       dateLabel = raw.slice(0, 10);
     }
     const desc = e.description || `${(e.exercise || "").replace(/_/g, " ")} updated`;
+    const oldFmt = fmtProgValue(e.old_value);
+    const newFmt = fmtProgValue(e.new_value);
+    const changeStr = (oldFmt !== "—" && newFmt !== "—")
+      ? `<span class="prog-entry-change">${oldFmt} → ${newFmt}</span>`
+      : "";
     return `
       <div class="prog-entry">
         <div class="prog-dot"></div>
         <div class="prog-entry-body">
           <span class="prog-entry-date">${dateLabel}</span>
           <span class="prog-entry-desc">${desc}</span>
+          ${changeStr}
         </div>
       </div>`;
   }).join("");
@@ -1270,27 +1353,227 @@ async function dismissHealthFlag(flagId) {
   } catch (_) {}
 }
 
+/* ── Hold progress chart (Canvas 2D) ────────────────────────── */
+function renderHoldProgress(holdData) {
+  const emptyEl  = document.getElementById("holdProgressEmpty");
+  const wrapEl   = document.getElementById("holdCanvasWrap");
+  const canvasEl = document.getElementById("holdCanvas");
+  const legendEl = document.getElementById("holdLegend");
+  const tooltip  = document.getElementById("holdTooltip");
+
+  const sessions = holdData?.sessions || [];
+  const targets  = holdData?.targets  || {};
+
+  if (sessions.length < 2) {
+    emptyEl.style.display = "flex";
+    wrapEl.style.display  = "none";
+    legendEl.style.display = "none";
+    return;
+  }
+
+  emptyEl.style.display  = "none";
+  wrapEl.style.display   = "block";
+  legendEl.style.display = "flex";
+
+  const SERIES = [
+    { key: "open_palm", label: "Open Palm Hold",    line: "#c4872a", target: "rgba(196,135,42,0.4)",  tLabel: "rgba(196,135,42,0.75)" },
+    { key: "mid_flex",  label: "Mid Flexion Hold",  line: "#2a8f58", target: "rgba(42,143,88,0.4)",   tLabel: "rgba(42,143,88,0.75)"  },
+    { key: "fist",      label: "Full Fist Hold",    line: "#6366f1", target: "rgba(99,102,241,0.4)",  tLabel: "rgba(99,102,241,0.75)" },
+  ];
+
+  // Y-axis maximum: max hold value + 2s buffer, rounded up to even number
+  let maxHold = 2;
+  for (const s of sessions) {
+    for (const ser of SERIES) {
+      if (s[ser.key] != null && s[ser.key] > maxHold) maxHold = s[ser.key];
+    }
+  }
+  for (const ser of SERIES) {
+    const t = targets[ser.key];
+    if (t != null && t > maxHold) maxHold = t;
+  }
+  maxHold = Math.ceil((maxHold + 2) / 2) * 2;
+
+  // HiDPI canvas setup
+  const dpr = window.devicePixelRatio || 1;
+  const W   = canvasEl.offsetWidth || 640;
+  const H   = 220;
+  canvasEl.width        = Math.round(W * dpr);
+  canvasEl.height       = Math.round(H * dpr);
+  canvasEl.style.height = H + "px";
+
+  const ctx = canvasEl.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const PAD = { left: 40, right: 88, top: 12, bottom: 28 };
+  const cW  = W - PAD.left - PAD.right;
+  const cH  = H - PAD.top  - PAD.bottom;
+  const n   = sessions.length;
+
+  function cssVar(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+  const C_GRID  = cssVar("--border");
+  const C_LABEL = cssVar("--text-hint");
+
+  const xOf = i => PAD.left + (i / (n - 1)) * cW;
+  const yOf = v => PAD.top  + (1 - v / maxHold) * cH;
+
+  // Gridlines and Y-axis labels
+  ctx.font         = `11px "DM Sans", system-ui, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign    = "right";
+
+  for (let gv = 0; gv <= maxHold; gv += 2) {
+    const gy = yOf(gv);
+    ctx.strokeStyle = C_GRID;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, gy);
+    ctx.lineTo(W - PAD.right, gy);
+    ctx.stroke();
+    ctx.fillStyle = C_LABEL;
+    ctx.fillText(`${gv}s`, PAD.left - 5, gy);
+  }
+
+  // X-axis session-number labels
+  ctx.textAlign    = "center";
+  ctx.textBaseline = "top";
+  ctx.fillStyle    = C_LABEL;
+  const step = n <= 12 ? 1 : Math.ceil(n / 12);
+  for (let i = 0; i < n; i++) {
+    if (i % step !== 0 && i !== n - 1) continue;
+    ctx.fillText(String(sessions[i].session_num), xOf(i), H - PAD.bottom + 4);
+  }
+
+  // Dashed target lines
+  ctx.font         = `10px "DM Sans", system-ui, sans-serif`;
+  ctx.textBaseline = "middle";
+  ctx.textAlign    = "left";
+  const drawnTargetYs = [];
+
+  for (const ser of SERIES) {
+    const t = targets[ser.key];
+    if (t == null) continue;
+    const ty = yOf(t);
+
+    ctx.strokeStyle = ser.target;
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, ty);
+    ctx.lineTo(W - PAD.right, ty);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Offset label vertically if it would collide with a previously drawn label
+    let labelY = ty;
+    for (const usedY of drawnTargetYs) {
+      if (Math.abs(labelY - usedY) < 13) labelY = usedY + 13;
+    }
+    drawnTargetYs.push(labelY);
+
+    ctx.fillStyle = ser.tLabel;
+    ctx.fillText("Week 2 target", W - PAD.right + 5, labelY);
+  }
+
+  // Exercise lines and dots
+  const dots = []; // {x, y, label, date, hold}
+
+  for (const ser of SERIES) {
+    const pts = sessions
+      .map((s, i) => s[ser.key] != null ? { i, v: s[ser.key], date: s.date } : null)
+      .filter(Boolean);
+
+    if (pts.length === 0) continue;
+
+    ctx.strokeStyle = ser.line;
+    ctx.lineWidth   = 2;
+    ctx.lineCap     = "round";
+    ctx.lineJoin    = "round";
+    ctx.setLineDash([]);
+
+    if (pts.length >= 2) {
+      ctx.beginPath();
+      ctx.moveTo(xOf(pts[0].i), yOf(pts[0].v));
+      for (let p = 1; p < pts.length; p++) {
+        ctx.lineTo(xOf(pts[p].i), yOf(pts[p].v));
+      }
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = ser.line;
+    for (const pt of pts) {
+      const px = xOf(pt.i);
+      const py = yOf(pt.v);
+      ctx.beginPath();
+      ctx.arc(px, py, 4, 0, Math.PI * 2);
+      ctx.fill();
+      dots.push({ x: px, y: py, label: ser.label, date: pt.date, hold: pt.v });
+    }
+  }
+
+  // Tooltip hover
+  function onMouseMove(e) {
+    const rect = canvasEl.getBoundingClientRect();
+    const mx   = e.clientX - rect.left;
+    const my   = e.clientY - rect.top;
+    let nearest = null;
+    let minDist = 12;
+    for (const d of dots) {
+      const dist = Math.hypot(d.x - mx, d.y - my);
+      if (dist < minDist) { minDist = dist; nearest = d; }
+    }
+    if (nearest) {
+      tooltip.innerHTML =
+        `<div style="font-weight:600;color:var(--text);">${nearest.label}</div>` +
+        `<div style="color:var(--text-hint);">${nearest.date}</div>` +
+        `<div><strong>${nearest.hold}s</strong> hold</div>`;
+      const tx = Math.min(nearest.x + 12, W - 155);
+      const ty = Math.max(nearest.y - 68, 2);
+      tooltip.style.left    = tx + "px";
+      tooltip.style.top     = ty + "px";
+      tooltip.style.display = "block";
+    } else {
+      tooltip.style.display = "none";
+    }
+  }
+
+  canvasEl.removeEventListener("mousemove",  canvasEl._holdMove);
+  canvasEl.removeEventListener("mouseleave", canvasEl._holdLeave);
+  canvasEl._holdMove  = onMouseMove;
+  canvasEl._holdLeave = () => { tooltip.style.display = "none"; };
+  canvasEl.addEventListener("mousemove",  canvasEl._holdMove);
+  canvasEl.addEventListener("mouseleave", canvasEl._holdLeave);
+}
+
 /* ── Boot ────────────────────────────────────────────────────── */
 async function boot() {
   try {
-    const [data, insightsRes, monthlyRes, progLogRes, flagsRes] = await Promise.all([
+    const [data, insightsRes, monthlyRes, progLogRes, flagsRes, holdRes] = await Promise.all([
       api.getProgressData(),
       api.getInsights(),
       api.getMonthlyHistory(),
       window.pywebview.api.get_progression_log(),
       window.pywebview.api.get_active_flags(),
+      window.pywebview.api.get_hold_progress(),
     ]);
+
+    console.log("get_hold_progress data:", JSON.stringify(holdRes, null, 2));
 
     if (!data.ok) throw new Error(data.error || "failed");
 
     // Overview
     document.getElementById("ovTotalSessions").textContent = data.total_sessions ?? "—";
     document.getElementById("ovStreak").textContent        = data.streak ?? 0;
-    document.getElementById("ovBestHold").textContent      = data.best_hold > 0 ? data.best_hold : "—";
     document.getElementById("ovAvgPain").textContent       = data.avg_pain > 0 ? data.avg_pain : "—";
 
     // Baseline
     renderBaselineCards(data.closure_chart || []);
+
+    // Hold progress chart
+    if (holdRes?.ok) renderHoldProgress(holdRes);
 
     // History
     renderSessionHistory(data.session_history || []);

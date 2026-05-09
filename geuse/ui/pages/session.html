@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Geuse — Session</title>
   <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('geuse-theme') || 'light');</script>
   <link rel="stylesheet" href="../styles/global.css" />
@@ -943,7 +944,9 @@ _camImg.addEventListener("load", function () {
   if (!iw || !ih) return;
   const scale = Math.max(cw / iw, ch / ih);
   const dw = iw * scale, dh = ih * scale;
-  _camCtx.drawImage(_camImg, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  requestAnimationFrame(function () {
+    _camCtx.drawImage(_camImg, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+  });
 });
 const closureBarFill= document.getElementById("closureBarFill");
 const closureVal    = document.getElementById("closureVal");

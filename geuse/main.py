@@ -34,8 +34,10 @@ if __name__ == "__main__":
         js_api=api,
         width=1100,
         height=720,
-        background_color="#0d0d0d",
+        background_color="#faf7f2",
         resizable=True,
+        text_select=False,
+        easy_drag=False,
     )
 
     def on_shown():

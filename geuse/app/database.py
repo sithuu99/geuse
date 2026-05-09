@@ -60,6 +60,29 @@ def _ex_display_name(ex: dict) -> str:
     return _EX_SHORT_NAMES.get(key, key.replace("_", " ").title())
 
 
+def _fmt_progression_value(raw: Optional[str]) -> str:
+    """Convert a raw progression_log value string to a readable label.
+
+    Examples:
+      "hold_s=4"  →  "4 second hold"
+      "reps=8"    →  "8 reps"
+      "sets=2"    →  "2 sets"
+    """
+    if not raw:
+        return "—"
+    if "=" in raw:
+        key, _, val = raw.partition("=")
+        key = key.strip()
+        val = val.strip()
+        if key == "hold_s":
+            return f"{val} second hold"
+        if key == "reps":
+            return f"{val} reps"
+        if key == "sets":
+            return f"{val} sets"
+    return raw
+
+
 # --------------------------------------------------------------------------- #
 # Connection helper
 # --------------------------------------------------------------------------- #
@@ -640,6 +663,24 @@ def seed_demo_data() -> None:
                plan_data["notes"], assessment_id))
         plan_id = cur.lastrowid
 
+        # Per-exercise hold noise — fixed offsets so the data is deterministic.
+        # Each list has exactly n_sessions (29) entries.
+        _PALM_NOISE = [  # open_palm_hold: ±0.30 s
+             0.00,  0.20, -0.10,  0.30, -0.20,  0.10,  0.25, -0.30,  0.10,  0.20,
+            -0.10,  0.30, -0.20,  0.10,  0.20, -0.10,  0.30, -0.20,  0.10,  0.20,
+            -0.10,  0.20,  0.00, -0.20,  0.10,  0.30, -0.10,  0.20,  0.00,
+        ]
+        _MIDF_NOISE = [  # mid_flexion_hold: ±0.20 s
+             0.00, -0.10,  0.15, -0.05,  0.20, -0.15,  0.10,  0.20, -0.10,  0.15,
+             0.00, -0.20,  0.10,  0.15, -0.05,  0.20, -0.10,  0.15,  0.00, -0.15,
+             0.10,  0.20, -0.10,  0.05,  0.15, -0.10,  0.05,  0.10,  0.00,
+        ]
+        _FIST_NOISE = [  # full_fist_close: ±0.15 s
+             0.00,  0.10, -0.10,  0.05,  0.15, -0.10,  0.05,  0.10, -0.05,  0.10,
+             0.00, -0.10,  0.10,  0.05,  0.10, -0.05,  0.10, -0.10,  0.05,  0.10,
+            -0.05,  0.10,  0.00, -0.10,  0.10,  0.05, -0.05,  0.10,  0.00,
+        ]
+
         # ── session
         for i, (yr, mo, day, pb, pa, dur, ex_cnt) in enumerate(session_specs):
             progress     = i / (n_sessions - 1)
@@ -670,7 +711,16 @@ def seed_demo_data() -> None:
                     else:
                         closure = round(0.28 + progress * 0.18, 3)
 
-                avg_hold = round(3.5 + progress * 4.0, 1)
+                # Each exercise type has a distinct hold trajectory and noise pattern.
+                if ex_name == "open_palm_hold":
+                    avg_hold = round(max(1.0, 3.2 + progress * 5.3 + _PALM_NOISE[i]), 1)
+                elif ex_name == "mid_flexion_hold":
+                    avg_hold = round(max(1.0, 2.1 + progress * 3.7 + _MIDF_NOISE[i]), 1)
+                elif ex_name == "full_fist_close":
+                    avg_hold = round(max(1.0, 1.4 + progress * 2.8 + _FIST_NOISE[i]), 1)
+                else:
+                    avg_hold = round(3.5 + progress * 4.0, 1)
+
                 exercises.append({
                     "exercise":    ex_name,
                     "sets_done":   3,
@@ -975,6 +1025,76 @@ def get_progress_data() -> dict:
     }
 
 
+def get_hold_progress() -> dict:
+    """Return per-session best avg hold durations by exercise type, plus plan targets."""
+    with _connect() as conn:
+        session_rows = conn.execute(
+            "SELECT id, completed_at, exercises FROM session "
+            "WHERE user_id=1 AND status='completed' ORDER BY completed_at ASC"
+        ).fetchall()
+        plan_row = conn.execute(
+            "SELECT exercises FROM rehab_plan WHERE user_id=1 ORDER BY id DESC LIMIT 1"
+        ).fetchone()
+
+    targets: dict = {"open_palm": None, "mid_flex": None, "fist": None}
+    if plan_row:
+        try:
+            for ex in json.loads(plan_row["exercises"]):
+                ex_id = ex.get("id", "")
+                h = ex.get("hold_s")
+                if h is None:
+                    continue
+                try:
+                    h = float(h)
+                except (TypeError, ValueError):
+                    continue
+                if ex_id == "open_palm_hold":
+                    targets["open_palm"] = h
+                elif ex_id == "mid_flexion_hold":
+                    targets["mid_flex"] = h
+                elif ex_id == "full_fist_close":
+                    targets["fist"] = h
+        except Exception:
+            pass
+
+    sessions = []
+    for i, row in enumerate(session_rows):
+        try:
+            exercises = json.loads(row["exercises"])
+        except Exception:
+            exercises = []
+
+        holds: dict = {"open_palm": None, "mid_flex": None, "fist": None}
+        for ex in exercises:
+            ex_name = ex.get("exercise") or ex.get("name", "")
+            h = ex.get("avg_hold_s")
+            if h is None:
+                continue
+            try:
+                h = float(h)
+            except (TypeError, ValueError):
+                continue
+            if ex_name == "open_palm_hold":
+                if holds["open_palm"] is None or h > holds["open_palm"]:
+                    holds["open_palm"] = round(h, 1)
+            elif ex_name == "mid_flexion_hold":
+                if holds["mid_flex"] is None or h > holds["mid_flex"]:
+                    holds["mid_flex"] = round(h, 1)
+            elif ex_name == "full_fist_close":
+                if holds["fist"] is None or h > holds["fist"]:
+                    holds["fist"] = round(h, 1)
+
+        sessions.append({
+            "session_num": i + 1,
+            "date": row["completed_at"][:10],
+            "open_palm": holds["open_palm"],
+            "mid_flex":  holds["mid_flex"],
+            "fist":      holds["fist"],
+        })
+
+    return {"sessions": sessions, "targets": targets}
+
+
 def get_all_sessions() -> list[dict]:
     with _connect() as conn:
         rows = conn.execute(
@@ -1045,7 +1165,13 @@ def get_progression_log() -> list[dict]:
         rows = conn.execute(
             "SELECT * FROM progression_log WHERE user_id=1 ORDER BY id DESC"
         ).fetchall()
-    return [dict(r) for r in rows]
+    result = []
+    for row in rows:
+        d = dict(row)
+        d["old_value"] = _fmt_progression_value(d.get("old_value"))
+        d["new_value"] = _fmt_progression_value(d.get("new_value"))
+        result.append(d)
+    return result
 
 
 def get_monthly_history() -> list:

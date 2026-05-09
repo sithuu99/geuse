@@ -21,6 +21,7 @@ from app.database import (
     discard_incomplete_session as db_discard_incomplete_session,
     dismiss_flag as db_dismiss_flag,
     get_active_flags as db_get_active_flags,
+    get_hold_progress as db_get_hold_progress,
     get_incomplete_session as db_get_incomplete_session,
     get_insights as db_get_insights,
     get_latest_assessment,
@@ -81,7 +82,7 @@ class Api:
         from pathlib import Path
         import threading
         BASE_DIR = Path(sys._MEIPASS) if getattr(sys, 'frozen', False) else Path(__file__).parent.parent.resolve()
-        safe_pages = ["welcome", "profile", "self_report", "assessment", "assessment_results", "plan", "session", "daily_checkin", "dashboard", "settings", "progress", "edit_profile"]
+        safe_pages = ["welcome", "profile", "self_report", "assessment", "assessment_results", "plan", "session", "daily_checkin", "dashboard", "settings", "progress", "edit_profile", "report"]
         if page not in safe_pages:
             return _err(ValueError(f"Unknown page: {page!r}"))
         try:
@@ -568,5 +569,138 @@ class Api:
         try:
             db_dismiss_flag(int(flag_id))
             return _ok()
+        except Exception as exc:
+            return _err(exc)
+
+    def get_hold_progress(self) -> dict:
+        """Return per-session best hold durations by exercise type, plus plan targets."""
+        try:
+            data = db_get_hold_progress()
+            return _ok(**data)
+        except Exception as exc:
+            return _err(exc)
+
+    def generate_pdf(self) -> dict:
+        """
+        Save the report as PDF to ~/Downloads/geuse_report.pdf.
+
+        Avoids all Qt thread-safety issues by never touching Qt widgets directly:
+          1. evaluate_js() captures the already-rendered HTML, replacing each
+             <canvas> with an <img> data-URL of its current pixels.
+          2. A <base> tag is injected so CSS/font/asset relative paths resolve.
+          3. The HTML is saved to a temp file.
+          4. Edge headless --print-to-pdf converts it to PDF (applies @media print).
+          5. Explorer opens with the PDF selected.
+        Falls back to opening the HTML in the default browser if Edge is absent.
+        """
+        try:
+            import os
+            import pathlib
+            import subprocess
+            import sys
+            import tempfile
+
+            # ── 1. Capture rendered HTML with canvases as PNG data-URLs ──────
+            html = webview.windows[0].evaluate_js("""
+                (function () {
+                    var root = document.documentElement.cloneNode(true);
+
+                    // ── Replace canvases with captured PNG images ──────────────
+                    document.querySelectorAll('canvas[id]').forEach(function (c) {
+                        var t = root.querySelector('#' + c.id);
+                        if (!t) return;
+                        var img = document.createElement('img');
+                        img.src = c.toDataURL('image/png');
+                        var nw = c.offsetWidth || parseInt(c.style.width) || 600;
+                        // Use setAttribute so we can embed !important inline —
+                        // inline !important beats any stylesheet !important rule.
+                        img.setAttribute('style',
+                            'display:block !important;' +
+                            'width:100% !important;' +
+                            'max-width:' + nw + 'px !important;' +
+                            'height:auto !important;');
+                        t.parentNode.replaceChild(img, t);
+                    });
+
+                    // ── Fix body so content is not clipped at screen width ─────
+                    var body = root.querySelector('body');
+                    if (body) body.style.overflow = 'visible';
+
+                    // ── Fix tables: prevent cells from overflowing A4 width ────
+                    root.querySelectorAll('.rpt-table').forEach(function (tbl) {
+                        tbl.style.tableLayout = 'fixed';
+                        tbl.style.width = '100%';
+                    });
+                    root.querySelectorAll('.rpt-table td, .rpt-table th').forEach(function (cell) {
+                        cell.style.whiteSpace = 'normal';
+                        cell.style.wordBreak  = 'break-word';
+                        cell.style.overflow   = 'hidden';
+                    });
+
+                    return root.outerHTML;
+                })()
+            """)
+
+            if not html:
+                return _err(Exception("evaluate_js returned empty — is the report page loaded?"))
+
+            # ── 2. Inject <base> so relative paths resolve from the pages dir ─
+            base_dir = (
+                pathlib.Path(sys._MEIPASS)
+                if getattr(sys, "frozen", False)
+                else pathlib.Path(__file__).parent.parent.resolve()
+            )
+            pages_url = (base_dir / "ui" / "pages").as_uri() + "/"
+            html = html.replace("<head>", f"<head><base href=\"{pages_url}\">", 1)
+
+            # ── 3. Write to a temp HTML file ──────────────────────────────────
+            tmp = pathlib.Path(tempfile.gettempdir()) / "geuse_report_print.html"
+            tmp.write_text("<!DOCTYPE html>\n" + html, encoding="utf-8")
+
+            # ── 4. Convert to PDF via Edge headless ───────────────────────────
+            out_pdf = pathlib.Path.home() / "Downloads" / "geuse_report.pdf"
+            out_pdf.parent.mkdir(parents=True, exist_ok=True)
+
+            edge = None
+            for candidate in [
+                os.path.expandvars(r"%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"),
+                os.path.expandvars(r"%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"),
+            ]:
+                if os.path.isfile(candidate):
+                    edge = candidate
+                    break
+
+            if edge:
+                subprocess.run(
+                    [
+                        edge,
+                        "--headless",
+                        "--disable-gpu",
+                        "--no-sandbox",
+                        "--run-all-compositor-stages-before-draw",
+                        "--no-pdf-header-footer",
+                        # Wide viewport so tables lay out correctly before the
+                        # print reflow shrinks them to A4 width (~681px usable).
+                        "--window-size=1200,1700",
+                        # Allow the temp HTML to load local file:// assets
+                        # (logo PNG, CSS, fonts) without security errors.
+                        "--allow-file-access-from-files",
+                        f"--print-to-pdf={out_pdf}",
+                        tmp.as_uri(),
+                    ],
+                    timeout=20,
+                    check=False,
+                    capture_output=True,
+                )
+
+            # ── 5. Open result ────────────────────────────────────────────────
+            if out_pdf.exists():
+                subprocess.Popen(f'explorer /select,"{out_pdf}"', shell=True)
+                return _ok(path=str(out_pdf))
+
+            # Edge not found or failed — open the HTML in the default browser
+            os.startfile(str(tmp))
+            return _ok(path=str(tmp), note="Opened HTML in browser — use Ctrl+P to save PDF")
+
         except Exception as exc:
             return _err(exc)
